@@ -30,8 +30,8 @@ import com.google.gson.Gson;
 
 public class ThuKyLuatParser {
     private static final Logger logger = LoggerFactory.getLogger(ThuKyLuatParser.class);
-    private String page = "https://thukyluat.vn/tim-kiem/?page=2";
-
+    private static String page = "https://thukyluat.vn/tim-kiem/?page=2";
+    private static String detail = "https://thukyluat.vn/vb/thong-tu-17-2020-tt-btnmt-lap-ban-ve-mat-cat-hien-trang-khu-vuc-duoc-phep-khai-thac-khoang-san-70601.html";
 
     public Data readDetail(String url, String code, int id, InetSocketAddress socketAddress) throws Exception {
         Data dataMap = new Data();
@@ -51,113 +51,47 @@ public class ThuKyLuatParser {
             FileUtils.writeStringToFile(new File("data/html/" + code + ".html"), doc.html());
         }
 
-        if (doc.select("form").attr("action").equals("/errors/validateCaptcha")) {
-//            logger.debug("PROXY [{}] URL_DETAIL [{}] - VALIDATE_CAPTCHA", (socketAddress != null ? socketAddress.toString() : "N/A"), url);
-            return null;
-        }
+        String htmlContent = doc.select("#NDDayDu").select(".MainContentAll").html();
 
-        String priceText = doc.select("span#priceblock_saleprice").text().trim();
+        Elements tip = doc.select("#NDDayDu").select("#bmContent");
 
-        if (StringUtils.isBlank(priceText)) {
-            priceText = doc.select("span#priceblock_ourprice").text().trim();
-        }
+//        tip.stream().forEach(v -> {
+//            System.out.println(v.parent());
+//            System.out.println("-----------------");
+//        });
+//        System.out.println(tip.size());
 
-        priceText = StringUtils.isNotBlank(priceText) ? StringUtils.split(priceText, "-")[0] : "0";
+        Elements elsNDTomTat = doc.select("#NDTomTat").select("table tbody tr");
 
-        double price = NumberUtils.toDouble(priceText.replaceAll("\\s+", "").replaceAll("\\$", ""));
-        String description = doc.select("div#feature-bullets").text();
+        // Số hiệu
+        System.out.println(elsNDTomTat.get(0).select("td").get(1).text());
 
-        String shop = doc.select("span#tabular-buybox-truncate-1 span.tabular-buybox-text").text().trim();
-        double rating = NumberUtils.toDouble(doc.select("span#acrPopover").attr("title").trim()
-                .replaceAll(" out of 5 stars", "").replaceAll("\\s+", ""));
+        // Loại văn bản
+        System.out.println(elsNDTomTat.get(0).select("td").get(4).text());
 
-        int count_comment = 0;
+        // Nơi ban hành
+        System.out.println(elsNDTomTat.get(1).select("td").get(1).text());
 
-        Elements elementsComment = doc.select("span#acrCustomerReviewText");
-        if (elementsComment.size() > 0) {
-            count_comment = NumberUtils.toInt(elementsComment.get(0).text().trim().replaceAll("[^0-9]+", ""));
-        }
+        // Người ký
+        System.out.println(elsNDTomTat.get(1).select("td").get(4).text());
 
-        String propertiesElements = doc.select("script").toString();
+        // Ngày ban hành
+        System.out.println(elsNDTomTat.get(2).select("td").get(1).text());
 
-        StringBuffer content = new StringBuffer();
+        // Ngày hiệu lực
+        System.out.println(elsNDTomTat.get(2).select("td").get(4).text());
 
-        Elements elementsProductDetail = doc.select("div#prodDetails");
-        elementsProductDetail.select("script").remove();
-        elementsProductDetail.select("style").remove();
-        Elements elementsProductContent = doc.select("div#aplus");
-        elementsProductContent.select("script").remove();
-        elementsProductContent.select("style").remove();
+        // Ngày công báo
+        System.out.println(elsNDTomTat.get(3).select("td").get(1).text());
 
-        content.append(elementsProductDetail.html());
-        content.append(elementsProductContent.html());
+        // Số công báo
+        System.out.println(elsNDTomTat.get(3).select("td").get(4).text());
 
-        Elements elementsProductCategory = doc.select("div#wayfinding-breadcrumbs_feature_div ul li a");
-        ArrayList<String> categoryList = new ArrayList<>();
-        elementsProductCategory.stream().forEach(v -> categoryList.add(v.text().trim()));
+        // Lĩnh vực
+        System.out.println(elsNDTomTat.get(4).select("td").get(1).text());
 
-        Map<String, Object> mapData = AmazonUtil.properties(propertiesElements);
-
-        if (mapData.size() > 0) {
-            dataMap.setProperties(new Gson().toJson(mapData));
-        } else {
-            dataMap.setProperties("");
-        }
-
-        dataMap.setId(id);
-        dataMap.setCode(code);
-        dataMap.setPrice(price);
-        dataMap.setRating(rating);
-        dataMap.setComment_count(count_comment);
-        dataMap.setShop(shop);
-        dataMap.setContent(content.toString());
-        dataMap.setCategory(StringUtils.join(categoryList, "|"));
-
-        String characterFilter = "[^\\p{L}\\p{M}\\p{N}\\p{P}\\p{Z}\\p{Cf}\\p{Cs}\\s]";
-        String emotionless = description.replaceAll(characterFilter,"");
-
-        dataMap.setDescription(StringUtils.substring(emotionless, 0, 4000));
-
-//        System.out.println("--------------------");
-//        System.out.println(dataMap.getCode());
-//        System.out.println(dataMap.getPrice());
-//        System.out.println(dataMap.getRating());
-//        System.out.println(dataMap.getComment_count());
-//        System.out.println(dataMap.getShop());
-//        System.out.println(dataMap.getDescription());
-//        System.out.println(dataMap.getProperties());
-//        System.out.println(dataMap.getContent());
-//        System.out.println(dataMap.getCategory());
-
-        logger.debug("PROXY [{}] URL_DETAIL [{}] PRICE[{}] RATE[{} - {}] SHOP[{}] PROPERTIES[{}]", (socketAddress != null ? socketAddress.toString() : "N/A"),
-                url, dataMap.getPrice(), dataMap.getRating(), dataMap.getComment_count(), dataMap.getShop(), StringUtils.isNotBlank(dataMap.getProperties()));
-
-        return dataMap;
-    }
-
-    private Data toData(String id, String text, String img, String price, String rating, String comment, String site) {
-        String urlDetail = Crawler.AMAZON_COM.getSite() + "/dp/%s/";
-
-        Data dataMap = new Data();
-        dataMap.setCode(id);
-        dataMap.setName(text);
-        dataMap.setImage(img);
-        dataMap.setPrice(NumberUtils.toDouble(
-                price.replaceAll("\\s+", "").replaceAll("\\$", "")));
-        dataMap.setRating(NumberUtils.toDouble(
-                rating.replaceAll(" out of 5 stars", "").replaceAll("\\s+", "")));
-        dataMap.setComment_count(NumberUtils.toInt(comment.replaceAll(",", "")));
-        dataMap.setLink(String.format(urlDetail, id));
-        dataMap.setSite(site);
-
-//        System.out.println("--------------------");
-//        System.out.println(dataMap.getCode());
-//        System.out.println(dataMap.getImage());
-//        System.out.println(dataMap.getLink());
-//        System.out.println(dataMap.getPrice());
-//        System.out.println(dataMap.getName());
-//        System.out.println(dataMap.getRating());
-//        System.out.println(dataMap.getComment_count());
+        // Tình trạng
+        System.out.println(elsNDTomTat.get(4).select("td").get(4).text());
 
         return dataMap;
     }
@@ -216,7 +150,8 @@ public class ThuKyLuatParser {
     public static void main(String[] args) {
         try {
             ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
-            thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=2");
+//            thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
+            thuKyLuatParser.readDetail(detail, "123", 1, null);
 
         } catch (Exception e) {
             e.printStackTrace();
