@@ -17,14 +17,21 @@ public class ThreadCategory implements Runnable  {
 
     @Override
     public void run() {
-        try {
-            List<Law> laws = thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
 
-            for (Law law : laws) {
-                lawDAO.insertCategory(law);
+            String url = "https://thukyluat.vn/tim-kiem/?page=%s";
+
+            for (int page = 19097; page > 0; page-- ) {
+                try {
+                    System.out.println(String.format(url, page));
+                    List<Law> laws = thuKyLuatParser.readQuery(String.format(url, page));
+
+                    for (Law law : laws) {
+                        lawDAO.insertCategory(law);
+                    }
+                } catch (Exception ex) {
+                    logger.error("ERROR_PAGE [{}]", String.format(url, page), ex);
+                }
             }
-        } catch (Exception ex) {
-            logger.error("ThreadCategory" , ex);
-        }
+
     }
 }
