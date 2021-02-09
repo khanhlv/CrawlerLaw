@@ -3,18 +3,22 @@ package com.crawler.law.parser;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import com.crawler.law.core.Consts;
 import com.crawler.law.core.ShareApplication;
 import com.crawler.law.core.UserAgent;
-import com.crawler.law.dao.LawDAO;
 import com.crawler.law.model.Law;
 import com.crawler.law.util.ResourceUtil;
 
@@ -30,69 +33,75 @@ public class ThuKyLuatParser {
     private static final Logger logger = LoggerFactory.getLogger(ThuKyLuatParser.class);
     private static String page = "https://thukyluat.vn/tim-kiem/?page=2";
     private static String detail = "https://thukyluat.vn/vb/thong-tu-17-2020-tt-btnmt-lap-ban-ve-mat-cat-hien-trang-khu-vuc-duoc-phep-khai-thac-khoang-san-70601.html";
+
+    // https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html
     private static String fileDownload = "https://thukyluat.vn/downloadpdf/24b1a/0?googledoc=true";
+    private DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
-    public Law readDetail(String url, String code, int id, InetSocketAddress socketAddress) throws Exception {
-        Law dataMap = new Law();
-
-        Connection connection = Jsoup.connect(url)
+    public Law readDetail(String url, String id) throws Exception {
+         Connection connection = Jsoup.connect(url)
                 .userAgent(UserAgent.getUserAgent())
                 .timeout(Consts.TIMEOUT)
                 .maxBodySize(0);
 
-        if (socketAddress != null) {
-            connection.proxy(new Proxy(Proxy.Type.HTTP, socketAddress));
-        }
-
         Document doc = connection.get();
 
         if (ResourceUtil.getValue("debug").equals("true")) {
-            FileUtils.writeStringToFile(new File("data/html/" + code + ".html"), doc.html());
+            FileUtils.writeStringToFile(new File("data/html/" + id + ".html"), doc.html());
         }
 
-        String htmlContent = doc.select("#NDDayDu").select(".MainContentAll").html();
+        Elements elsContent = doc.select("#NDDayDu").select(".MainContentAll");
 
-        Elements tip = doc.select("#NDDayDu").select("#bmContent");
+        String htmlContent = elsContent.html();
 
-//        tip.stream().forEach(v -> {
-//            System.out.println(v.parent());
+        Elements tip = elsContent.select("a[onclick]");
+
+        ArrayList<String> tipList = new ArrayList<>();
+        tip.stream().forEach(v -> {
+            String tipType = v.attr("onclick");
+            tipType = tipType.substring(tipType.indexOf("'") + 1, tipType.lastIndexOf("'"));
+
+            String tipHtml = doc.select("#NDDayDu").select(tipType).toString();
+
+            tipList.add(tipHtml);
+//            System.out.println(tipHtml);
 //            System.out.println("-----------------");
-//        });
-//        System.out.println(tip.size());
+        });
+        htmlContent += "<div style=\"display: none\">" + StringUtils.join(tipList, "") + "</div>";
 
         Elements elsNDTomTat = doc.select("#NDTomTat").select("table tbody tr");
 
         // Số hiệu
-        System.out.println(elsNDTomTat.get(0).select("td").get(1).text());
+        String number = elsNDTomTat.get(0).select("td").get(1).text().trim();
 
         // Loại văn bản
-        System.out.println(elsNDTomTat.get(0).select("td").get(4).text());
+        String type = elsNDTomTat.get(0).select("td").get(4).text().trim();
 
         // Nơi ban hành
-        System.out.println(elsNDTomTat.get(1).select("td").get(1).text());
+        String agency = elsNDTomTat.get(1).select("td").get(1).text().trim();
 
         // Người ký
-        System.out.println(elsNDTomTat.get(1).select("td").get(4).text());
+        String signes = elsNDTomTat.get(1).select("td").get(4).text().trim();
 
         // Ngày ban hành
-        System.out.println(elsNDTomTat.get(2).select("td").get(1).text());
+//        System.out.println(elsNDTomTat.get(2).select("td").get(1).text());
 
         // Ngày hiệu lực
-        System.out.println(elsNDTomTat.get(2).select("td").get(4).text());
+//        System.out.println(elsNDTomTat.get(2).select("td").get(4).text());
 
         // Ngày công báo
-        System.out.println(elsNDTomTat.get(3).select("td").get(1).text());
+        String datePublic = elsNDTomTat.get(3).select("td").get(1).text().trim();
 
         // Số công báo
-        System.out.println(elsNDTomTat.get(3).select("td").get(4).text());
+        String numberPublic = elsNDTomTat.get(3).select("td").get(4).text().trim();
 
         // Lĩnh vực
-        System.out.println(elsNDTomTat.get(4).select("td").get(1).text());
+//        System.out.println(elsNDTomTat.get(4).select("td").get(1).text());
 
         // Tình trạng
-        System.out.println(elsNDTomTat.get(4).select("td").get(4).text());
+//        System.out.println(elsNDTomTat.get(4).select("td").get(4).text());
 
-        return dataMap;
+        return toData(id, number, numberPublic, datePublic, agency, type, signes, htmlContent);
     }
 
     public List<Law> readQuery(String url) throws Exception {
@@ -145,7 +154,45 @@ public class ThuKyLuatParser {
 
         return lisData;
     }
-    private DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
+    private Law toData(String id, String number, String numberPublic,
+                       String datePublic, String agency, String type,
+                       String signes, String content) {
+
+        Law law = new Law();
+        law.setId(id);
+        law.setNumber(number);
+        law.setNumberPublic(numberPublic);
+
+        if (StringUtils.isNotBlank(datePublic)) {
+            try {
+                law.setDatePublic(dateFormat.parse(datePublic));
+            } catch (ParseException e) {
+
+            }
+        }
+
+        law.setCrawlerAgencyName(agency);
+        law.setAgencyId(NumberUtils.toLong(ShareApplication.AGENCY_MAP.get(agency)));
+
+        law.setCrawlerTypeName(type);
+        law.setTypeId(NumberUtils.toLong(ShareApplication.TYPE_MAP.get(type)));
+
+        law.setSigned(signes);
+        law.setLawStatus(0);
+        law.setContent(content);
+
+        System.out.println(law.getNumber());
+        System.out.println(law.getNumberPublic());
+        System.out.println(datePublic);
+        System.out.println(law.getCrawlerAgencyName() + "#" + law.getAgencyId());
+        System.out.println(law.getCrawlerTypeName() + "#" + law.getTypeId());
+        System.out.println(law.getSigned());
+//        System.out.println(law.getContent());
+        System.out.println("-------------------------------------");
+
+        return law;
+    }
 
     private Law toData(String title, String url, String categoryName, ArrayList<String> categoryId,
                        String dateIssued, String dateUpdate) {
@@ -156,16 +203,20 @@ public class ThuKyLuatParser {
 
         law.setCategory(categoryId);
 
-        try {
-            law.setDateIssued(dateFormat.parse(dateIssued));
-        } catch (ParseException e) {
+        if (StringUtils.isNotBlank(dateIssued)) {
+            try {
+                law.setDateIssued(dateFormat.parse(dateIssued));
+            } catch (ParseException e) {
 
+            }
         }
 
-        try {
-            law.setUpdatedDate(dateFormat.parse(dateUpdate));
-        } catch (ParseException e) {
+        if (StringUtils.isNotBlank(dateUpdate)) {
+            try {
+                law.setUpdatedDate(dateFormat.parse(dateUpdate));
+            } catch (ParseException e) {
 
+            }
         }
 
         System.out.println(law.getName());
@@ -180,17 +231,9 @@ public class ThuKyLuatParser {
     public static void main(String[] args) {
         try {
             ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
-            List<Law> laws = thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
+            //thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
 
-            LawDAO lawDAO = new LawDAO();
-            laws.forEach(v -> {
-                try {
-                    lawDAO.insertCategory(v);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            });
-//            thuKyLuatParser.readDetail(detail, "123", 1, null);
+            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", "12");
 
         } catch (Exception e) {
             e.printStackTrace();

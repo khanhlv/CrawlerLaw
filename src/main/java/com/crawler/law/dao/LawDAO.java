@@ -56,6 +56,30 @@ public class LawDAO {
         }
     }
 
+    public void update(Law law) throws SQLException {
+
+        String sqlStory = "UPDATE LAW SET LAW_NUMBER = ?, LAW_NUMBER_PUBLICATION = ?, LAW_DATE_PUBLICATION = ?, LAW_AGENCY_ID ?, " +
+                "LAW_TYPE_ID = ?, LAW_SIGNED = ?, LAW_STATUS = ?, LAW_CONTENT = ?,  STATUS = ? WHERE ID = ?";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            pStmt.setString(1, law.getNumber());
+            pStmt.setString(2, law.getNumberPublic());
+            pStmt.setDate(3, new Date(law.getDatePublic().getTime()));
+            pStmt.setLong(4, law.getAgencyId());
+            pStmt.setLong(5, law.getTypeId());
+            pStmt.setString(6, law.getSigned());
+            pStmt.setLong(7, law.getLawStatus());
+            pStmt.setString(8, law.getContent());
+            pStmt.setLong(9, 1);
+            pStmt.setString(10, law.getId());
+
+            pStmt.executeUpdate();
+        } catch (Exception ex) {
+            throw ex;
+        }
+    }
+
     public void insertLawCategory(int id, int category) throws SQLException {
         String sqlStory = "INSERT INTO LAW_CATEGORY VALUES (?,?)";
         try (Connection con = ConnectionPool.getTransactional();
