@@ -1,5 +1,6 @@
 package com.crawler.law.model;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 public class Law {
@@ -10,7 +11,7 @@ public class Law {
     private long typeId;
     private String numberPublic;
     private Date dateIssued;
-    private Date dateExpried;
+    private Date dateExpired;
     private Date datePublic;
     private String signed;
     private Date updatedDate;
@@ -19,6 +20,10 @@ public class Law {
     private String file;
     private String crawlerSource;
     private long status;
+    private String crawlerTypeName;
+    private String crawlerAgencyName;
+    private String crawlerCategoryName;
+    private ArrayList<String> category;
 
     public String getId() {
         return id;
@@ -76,12 +81,12 @@ public class Law {
         this.dateIssued = dateIssued;
     }
 
-    public Date getDateExpried() {
-        return dateExpried;
+    public Date getDateExpired() {
+        return dateExpired;
     }
 
-    public void setDateExpried(Date dateExpried) {
-        this.dateExpried = dateExpried;
+    public void setDateExpired(Date dateExpired) {
+        this.dateExpired = dateExpired;
     }
 
     public Date getDatePublic() {
@@ -146,5 +151,37 @@ public class Law {
 
     public void setStatus(long status) {
         this.status = status;
+    }
+
+    public String getCrawlerTypeName() {
+        return crawlerTypeName;
+    }
+
+    public void setCrawlerTypeName(String crawlerTypeName) {
+        this.crawlerTypeName = crawlerTypeName;
+    }
+
+    public String getCrawlerAgencyName() {
+        return crawlerAgencyName;
+    }
+
+    public void setCrawlerAgencyName(String crawlerAgencyName) {
+        this.crawlerAgencyName = crawlerAgencyName;
+    }
+
+    public String getCrawlerCategoryName() {
+        return crawlerCategoryName;
+    }
+
+    public void setCrawlerCategoryName(String crawlerCategoryName) {
+        this.crawlerCategoryName = crawlerCategoryName;
+    }
+
+    public ArrayList<String> getCategory() {
+        return category;
+    }
+
+    public void setCategory(ArrayList<String> category) {
+        this.category = category;
     }
 }

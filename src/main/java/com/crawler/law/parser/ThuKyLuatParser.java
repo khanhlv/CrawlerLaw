@@ -3,38 +3,37 @@ package com.crawler.law.parser;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.crawler.law.core.Consts;
+import com.crawler.law.core.ShareApplication;
 import com.crawler.law.core.UserAgent;
-import com.crawler.law.enums.Crawler;
-import com.crawler.law.model.Data;
-import com.crawler.law.proxy.ProxyProvider;
-import com.crawler.law.util.AmazonUtil;
+import com.crawler.law.dao.LawDAO;
+import com.crawler.law.model.Law;
 import com.crawler.law.util.ResourceUtil;
-import com.google.gson.Gson;
 
 public class ThuKyLuatParser {
     private static final Logger logger = LoggerFactory.getLogger(ThuKyLuatParser.class);
     private static String page = "https://thukyluat.vn/tim-kiem/?page=2";
     private static String detail = "https://thukyluat.vn/vb/thong-tu-17-2020-tt-btnmt-lap-ban-ve-mat-cat-hien-trang-khu-vuc-duoc-phep-khai-thac-khoang-san-70601.html";
+    private static String fileDownload = "https://thukyluat.vn/downloadpdf/24b1a/0?googledoc=true";
 
-    public Data readDetail(String url, String code, int id, InetSocketAddress socketAddress) throws Exception {
-        Data dataMap = new Data();
+    public Law readDetail(String url, String code, int id, InetSocketAddress socketAddress) throws Exception {
+        Law dataMap = new Law();
 
         Connection connection = Jsoup.connect(url)
                 .userAgent(UserAgent.getUserAgent())
@@ -96,22 +95,12 @@ public class ThuKyLuatParser {
         return dataMap;
     }
 
-    public List<Data> readQuery(String url) throws Exception {
-        List<Data> lisData = new ArrayList<>();
-
-        Map<String, String> mapHeader = new LinkedHashMap<>();
-//        mapHeader.put("origin", Crawler.AMAZON_COM.getSite());
-//        mapHeader.put("referer", url);
-//        mapHeader.put("sec-fetch-dest", "empty");
-//        mapHeader.put("sec-fetch-mode", "cors");
-//        mapHeader.put("x-amazon-s-fallback-url", "");
-//        mapHeader.put("x-amazon-s-mismatch-behavior", "ALLOW");
-//        mapHeader.put("x-requested-with", "XMLHttpRequest");
+    public List<Law> readQuery(String url) throws Exception {
+        List<Law> lisData = new ArrayList<>();
 
         Connection.Response resp = Jsoup.connect(url)
                 .userAgent(UserAgent.getUserAgent())
                 .timeout(Consts.TIMEOUT_CATEGORY)
-                .headers(mapHeader)
                 .ignoreContentType(true)
                 .method(Connection.Method.GET)
                 .maxBodySize(0)
@@ -128,30 +117,80 @@ public class ThuKyLuatParser {
         Elements elements = document.select(".vaban-nd .item-vb");
 
         elements.stream().forEach(els -> {
-            Elements href = els.select("ul").get(0).select("li.vb-Tit > a");
+            Elements elementsUl = els.select("ul");
+
+            Elements href = elementsUl.get(0).select(".vb-Tit > a");
             href.select("span").remove();
 
-            Elements category = els.select("ul").get(1).select("a");
+            Elements category = elementsUl.get(2).select("a");
 
+            String title = href.text().trim();
+            String crawlerSource = href.attr("href").trim();
 
-            System.out.println(href.text());
-            System.out.println(href.attr("href"));
-
+            ArrayList<String> categoryList = new ArrayList<>();
+            ArrayList<String> categoryNameList = new ArrayList<>();
             category.stream().forEach(v -> {
-                System.out.println(v.select("a").text());
+                String categoryN = v.select("a").text().trim();
+
+                categoryNameList.add(categoryN);
+                categoryList.add(ShareApplication.CATEGORY_MAP.get(categoryN));
             });
-            System.out.println("---------------------------------------");
+
+            Elements elsDate = els.select("ul").get(0).select(".date-vb li");
+            String dateIssued = elsDate.get(0).select("span").text().trim();
+            String dateUpdated = elsDate.select(".cap-nhat").select("span").text().trim();
+
+            lisData.add(toData(title, crawlerSource, StringUtils.join(categoryNameList, "|"), categoryList, dateIssued, dateUpdated));
         });
-        System.out.println(elements.size());
 
         return lisData;
+    }
+    private DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
+    private Law toData(String title, String url, String categoryName, ArrayList<String> categoryId,
+                       String dateIssued, String dateUpdate) {
+        Law law = new Law();
+        law.setName(title);
+        law.setCrawlerSource(url);
+        law.setCrawlerCategoryName(categoryName);
+
+        law.setCategory(categoryId);
+
+        try {
+            law.setDateIssued(dateFormat.parse(dateIssued));
+        } catch (ParseException e) {
+
+        }
+
+        try {
+            law.setUpdatedDate(dateFormat.parse(dateUpdate));
+        } catch (ParseException e) {
+
+        }
+
+        System.out.println(law.getName());
+        System.out.println(law.getCrawlerSource());
+        System.out.println(law.getCrawlerCategoryName() + "#" + StringUtils.join(law.getCategory(), ","));
+        System.out.println(dateIssued);
+        System.out.println(dateUpdate);
+        System.out.println("-------------------------------------");
+        return law;
     }
 
     public static void main(String[] args) {
         try {
             ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
-//            thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
-            thuKyLuatParser.readDetail(detail, "123", 1, null);
+            List<Law> laws = thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
+
+            LawDAO lawDAO = new LawDAO();
+            laws.forEach(v -> {
+                try {
+                    lawDAO.insertCategory(v);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
+//            thuKyLuatParser.readDetail(detail, "123", 1, null);
 
         } catch (Exception e) {
             e.printStackTrace();

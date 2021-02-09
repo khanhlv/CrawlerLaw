@@ -1,149 +1,91 @@
 package com.crawler.law.dao;
 
 import java.io.File;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.crawler.law.core.ConnectionPool;
-import com.crawler.law.core.ShareApplication;
-import com.crawler.law.model.Crawler;
-import com.crawler.law.model.Queue;
+import com.crawler.law.model.Law;
+import com.crawler.law.util.StringUtil;
 
 public class LawDAO {
 
     private static final Logger logger = LoggerFactory.getLogger(LawDAO.class);
 
-    public long countQueueCrawler() throws SQLException {
-        String sqlStory = "SELECT count(1) FROM " + ShareApplication.crawler.getTableQueue() + " WHERE `status` = 0";
-        try (Connection con = ConnectionPool.getTransactional();
-             PreparedStatement pStmt = con.prepareStatement(sqlStory);
-             ResultSet resultSet = pStmt.executeQuery()) {
+    public void insertCategory(Law law) throws SQLException {
 
-            if(resultSet.next()) {
-                return resultSet.getInt(1);
-            }
-        } catch (Exception ex) {
-            throw ex;
+        if (checkExists(law.getCrawlerSource())) {
+            return;
         }
 
-        return 0;
-    }
-
-    public void updateAllQueueStatus(int status) throws SQLException {
-        String sqlStory = "UPDATE " + ShareApplication.crawler.getTableQueue() + " SET `status` = ?";
+        String sqlStory = "INSERT INTO LAW(LAW_NAME,LAW_DATE_ISSUED,LAW_UPDATED_DATE,META_URL,META_TITLE,META_DESCRIPTION,META_KEYWORD,CRAWLER_CATEGORY,CRAWLER_SOURCE,STATUS) " +
+                "VALUES (?,?,?,?,?,?,?,?,?,?)";
         try (Connection con = ConnectionPool.getTransactional();
-             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+             PreparedStatement pStmt = con.prepareStatement(sqlStory, Statement.RETURN_GENERATED_KEYS)) {
 
-            pStmt.setInt(1, status);
+            pStmt.setString(1, law.getName());
+            pStmt.setDate(2, new Date(law.getDateIssued().getTime()));
+            pStmt.setDate(3, new Date(law.getUpdatedDate().getTime()));
+            pStmt.setString(4, StringUtil.stripAccents(law.getName(), "-"));
+            pStmt.setString(5, law.getName());
+            pStmt.setString(6, law.getName());
+            pStmt.setString(7, law.getName());
+            pStmt.setString(8, law.getCrawlerCategoryName());
+            pStmt.setString(9, law.getCrawlerSource());
+            pStmt.setInt(10, 0);
 
             pStmt.executeUpdate();
-        } catch (Exception ex) {
-            throw ex;
-        }
-    }
 
-    public List<Crawler> crawlerList() throws SQLException {
+            ResultSet genKeysRs = pStmt.getGeneratedKeys();
 
-        List<Crawler> crawlerList = new ArrayList<>();
-        String sqlStory = "SELECT * FROM " + ShareApplication.crawler.getTableCrawler();
-        try (Connection con = ConnectionPool.getTransactional();
-             PreparedStatement pStmt = con.prepareStatement(sqlStory);
-             ResultSet resultSet = pStmt.executeQuery()) {
+            if (genKeysRs.next()) {
+                int lawId = genKeysRs.getInt(1);
 
-            while(resultSet.next()) {
-                Crawler crawler = new Crawler();
-                crawler.setId(resultSet.getString("id"));
-                crawler.setName(resultSet.getString("name"));
-                crawler.setUrl(resultSet.getString("url"));
-                crawler.setPage(resultSet.getInt("page"));
-                crawlerList.add(crawler);
-            }
-        } catch (Exception ex) {
-            throw ex;
-        }
-
-        return crawlerList;
-    }
-
-
-    public List<Queue> queueList(int limit) throws SQLException {
-
-        List<Queue> queueList = new ArrayList<>();
-        String sqlStory = "SELECT * FROM " + ShareApplication.crawler.getTableQueue() + " WHERE status = 0 LIMIT ?";
-        try (Connection con = ConnectionPool.getTransactional();
-             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
-
-            pStmt.setInt(1, limit);
-
-            ResultSet resultSet = pStmt.executeQuery();
-            while(resultSet.next()) {
-
-                Queue queue = new Queue();
-                queue.setId(resultSet.getInt("id"));
-                queue.setLink(resultSet.getString("link"));
-                queue.setStatus(resultSet.getInt("status"));
-                queue.setName(resultSet.getString("name"));
-
-                updateQueueStatus(queue.getId(), 1);
-
-                queueList.add(queue);
-            }
-            resultSet.close();
-        } catch (Exception ex) {
-            throw ex;
-        }
-
-        return queueList;
-    }
-
-    public void updateQueueStatus(int id, int status) throws SQLException {
-        String sqlStory = "UPDATE " + ShareApplication.crawler.getTableQueue() + " SET status = ? WHERE id = ?";
-        try (Connection con = ConnectionPool.getTransactional();
-             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
-
-            pStmt.setInt(1, status);
-            pStmt.setInt(2, id);
-
-            pStmt.executeUpdate();
-        } catch (Exception ex) {
-            throw ex;
-        }
-    }
-
-    public void insertQueueFile() throws Exception {
-        try {
-            StringBuilder data = new StringBuilder();
-            crawlerList().stream().forEach(v -> {
-                for (int i = 2; i <= v.getPage(); i++) {
-                    String url = v.getUrl().replaceAll("#\\{page\\}", i + "");
-                    System.out.println(url);
-
-                    data.append(String.format("INSERT INTO %s (link, name, status) VALUES ('%s','%s',0);\n", ShareApplication.crawler.getTableQueue(), url, v.getName()));
+                for(String data : law.getCategory()) {
+                    insertLawCategory(lawId, NumberUtils.toInt(data));
                 }
-            });
-
-            FileUtils.writeStringToFile(new File("data/queue.sql"), data.toString());
-        } catch (Exception e) {
-            throw e;
+            }
+        } catch (Exception ex) {
+            throw ex;
         }
     }
 
-    public static void main(String[] args) {
-        try {
-            LawDAO crawlerDAO = new LawDAO();
+    public void insertLawCategory(int id, int category) throws SQLException {
+        String sqlStory = "INSERT INTO LAW_CATEGORY VALUES (?,?)";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
-            crawlerDAO.insertQueueFile();
+            pStmt.setInt(1, id);
+            pStmt.setInt(2, category);
 
-        } catch (Exception e) {
-            e.printStackTrace();
+            pStmt.executeUpdate();
+        } catch (Exception ex) {
+            throw ex;
         }
+    }
+
+    public boolean checkExists(String crawlerSouce) throws SQLException {
+        String sqlStory = "SELECT * FROM LAW WHERE CRAWLER_SOURCE = ?";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            pStmt.setString(1, crawlerSouce);
+
+            ResultSet rs = pStmt.executeQuery();
+
+            if (rs.next()) {
+                return true;
+            }
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return false;
     }
 }

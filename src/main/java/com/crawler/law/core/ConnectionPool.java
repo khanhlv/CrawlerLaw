@@ -12,7 +12,7 @@ public class ConnectionPool {
     private static HikariDataSource ds;
 
     static {
-        config.setPoolName("E-commerceHikariCP");
+        config.setPoolName("HikariCP");
         config.setConnectionTestQuery("SELECT 1");
         config.setMaximumPoolSize(20);
         config.setMinimumIdle(5);

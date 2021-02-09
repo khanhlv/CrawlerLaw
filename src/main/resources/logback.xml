@@ -50,7 +50,7 @@
         <appender-ref ref="DEFAULT_LOG" />
     </logger>
 
-    <logger name="com.zaxxer.hikari" level="ERROR" >
+    <logger name="com.zaxxer.hikari" level="DEBUG" >
         <appender-ref ref="ERROR_LOG" />
     </logger>
 
