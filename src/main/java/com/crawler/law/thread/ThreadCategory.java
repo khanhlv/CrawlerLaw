@@ -1,6 +1,5 @@
 package com.crawler.law.thread;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -15,21 +14,28 @@ public class ThreadCategory implements Runnable  {
     private LawDAO lawDAO = new LawDAO();
     private ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
 
+    private int page = 10;
+
+    public ThreadCategory(int page) {
+        this.page = page;
+        System.out.println("START_THREAD_DATA_CATEGORY" );
+    }
+
     @Override
     public void run() {
 
             String url = "https://thukyluat.vn/tim-kiem/?page=%s";
 
-            for (int page = 19097; page > 0; page-- ) {
+            for (int i = 1; i <= page; i++) {
                 try {
-                    System.out.println(String.format(url, page));
-                    List<Law> laws = thuKyLuatParser.readQuery(String.format(url, page));
+                    logger.info(String.format(url, i));
+                    List<Law> laws = thuKyLuatParser.readQuery(String.format(url, i));
 
                     for (Law law : laws) {
                         lawDAO.insertCategory(law);
                     }
                 } catch (Exception ex) {
-                    logger.error("ERROR_PAGE [{}]", String.format(url, page), ex);
+                    logger.error("ERROR_PAGE [{}]", String.format(url, i), ex);
                 }
             }
 

@@ -1,22 +1,46 @@
 package com.crawler.law.dao;
 
-import java.io.File;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.io.FileUtils;
+import com.crawler.law.core.ConnectionPool;
+import com.crawler.law.model.Law;
+import com.crawler.law.util.StringUtil;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.crawler.law.core.ConnectionPool;
-import com.crawler.law.model.Law;
-import com.crawler.law.util.StringUtil;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LawDAO {
 
     private static final Logger logger = LoggerFactory.getLogger(LawDAO.class);
+
+    public List<Law> queueList(int limit) throws SQLException {
+
+        List<Law> dataList = new ArrayList<>();
+        String sqlStory = "SELECT TOP "+ limit+" * FROM LAW WHERE STATUS = 0";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            ResultSet resultSet = pStmt.executeQuery();
+            while(resultSet.next()) {
+
+                Law data = new Law();
+                data.setId(resultSet.getLong("LAW_ID"));
+                data.setCrawlerSource(resultSet.getString("CRAWLER_SOURCE"));
+
+                data.setStatus(resultSet.getInt("STATUS"));
+
+                dataList.add(data);
+            }
+
+            resultSet.close();
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return dataList;
+    }
 
     public void insertCategory(Law law) throws SQLException {
 
@@ -58,8 +82,9 @@ public class LawDAO {
 
     public void update(Law law) throws SQLException {
 
-        String sqlStory = "UPDATE LAW SET LAW_NUMBER = ?, LAW_NUMBER_PUBLICATION = ?, LAW_DATE_PUBLICATION = ?, LAW_AGENCY_ID ?, " +
-                "LAW_TYPE_ID = ?, LAW_SIGNED = ?, LAW_STATUS = ?, LAW_CONTENT = ?,  STATUS = ? WHERE ID = ?";
+        String sqlStory = "UPDATE LAW SET LAW_NUMBER = ?, " +
+                "LAW_NUMBER_PUBLICATION = ?, LAW_DATE_PUBLICATION = ?, LAW_AGENCY_ID = ?, " +
+                "LAW_TYPE_ID = ?, LAW_SIGNED = ?, LAW_STATUS = ?, LAW_CONTENT = ?, STATUS = ?, META_URL = ? WHERE LAW_ID = ?";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -72,7 +97,23 @@ public class LawDAO {
             pStmt.setLong(7, law.getLawStatus());
             pStmt.setString(8, law.getContent());
             pStmt.setLong(9, 1);
-            pStmt.setString(10, law.getId());
+            pStmt.setString(10, law.getMetaUrl());
+            pStmt.setLong(11, law.getId());
+
+            pStmt.executeUpdate();
+        } catch (Exception ex) {
+            throw ex;
+        }
+    }
+
+    public void updateStatus(long lawId, long status) throws SQLException {
+
+        String sqlStory = "UPDATE LAW SET STATUS = ? WHERE LAW_ID = ?";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            pStmt.setLong(1, status);
+            pStmt.setLong(2, lawId);
 
             pStmt.executeUpdate();
         } catch (Exception ex) {

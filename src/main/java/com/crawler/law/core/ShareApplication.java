@@ -171,5 +171,7 @@ public class ShareApplication {
         TYPE_MAP.put("Văn bản khác","14");
         TYPE_MAP.put("Văn bản WTO","15");
         TYPE_MAP.put("Quy chuẩn","16");
+        TYPE_MAP.put("Công điện","17");
+        TYPE_MAP.put("Công văn","18");
     }
 }

@@ -3,15 +3,16 @@ package com.crawler.law.parser;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.sql.Date;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.crawler.law.util.StringUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -38,7 +39,7 @@ public class ThuKyLuatParser {
     private static String fileDownload = "https://thukyluat.vn/downloadpdf/24b1a/0?googledoc=true";
     private DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
 
-    public Law readDetail(String url, String id) throws Exception {
+    public Law readDetail(String url, Long id) throws Exception {
          Connection connection = Jsoup.connect(url)
                 .userAgent(UserAgent.getUserAgent())
                 .timeout(Consts.TIMEOUT)
@@ -67,9 +68,16 @@ public class ThuKyLuatParser {
 //            System.out.println(tipHtml);
 //            System.out.println("-----------------");
         });
-        htmlContent += "<div style=\"display: none\">" + StringUtils.join(tipList, "") + "</div>";
+
+        if (StringUtils.isNotBlank(htmlContent)) {
+            htmlContent += "<div style=\"display: none\">" + StringUtils.join(tipList, "") + "</div>";
+        }
 
         Elements elsNDTomTat = doc.select("#NDTomTat").select("table tbody tr");
+
+        if (elsNDTomTat.size() == 0) {
+            elsNDTomTat = doc.select("#NDDayDu").select(".MainContent table tbody tr");
+        }
 
         // Số hiệu
         String number = elsNDTomTat.get(0).select("td").get(1).text().trim();
@@ -155,9 +163,9 @@ public class ThuKyLuatParser {
         return lisData;
     }
 
-    private Law toData(String id, String number, String numberPublic,
+    private Law toData(Long id, String number, String numberPublic,
                        String datePublic, String agency, String type,
-                       String signes, String content) {
+                       String signed, String content) {
 
         Law law = new Law();
         law.setId(id);
@@ -168,8 +176,10 @@ public class ThuKyLuatParser {
             try {
                 law.setDatePublic(dateFormat.parse(datePublic));
             } catch (ParseException e) {
-
+                law.setDatePublic(new Date(0));
             }
+        } else {
+            law.setDatePublic(new Date(0));
         }
 
         law.setCrawlerAgencyName(agency);
@@ -178,9 +188,10 @@ public class ThuKyLuatParser {
         law.setCrawlerTypeName(type);
         law.setTypeId(NumberUtils.toLong(ShareApplication.TYPE_MAP.get(type)));
 
-        law.setSigned(signes);
+        law.setSigned(signed);
         law.setLawStatus(0);
         law.setContent(content);
+        law.setMetaUrl(StringUtil.stripAccents(type + " " +  number + " ban hành " + agency, "-"));
 
         System.out.println(law.getNumber());
         System.out.println(law.getNumberPublic());
@@ -188,6 +199,7 @@ public class ThuKyLuatParser {
         System.out.println(law.getCrawlerAgencyName() + "#" + law.getAgencyId());
         System.out.println(law.getCrawlerTypeName() + "#" + law.getTypeId());
         System.out.println(law.getSigned());
+        System.out.println(law.getMetaUrl());
 //        System.out.println(law.getContent());
         System.out.println("-------------------------------------");
 
@@ -233,7 +245,8 @@ public class ThuKyLuatParser {
             ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
             //thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
 
-            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", "12");
+//            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", "12");
+            thuKyLuatParser.readDetail("http://thukyluat.vn//cv/cong-van-641-bnv-bcd-2021-huong-dan-trien-khai-cuoc-dieu-tra-co-so-hanh-chinh-718c9.html", 12L);
 
         } catch (Exception e) {
             e.printStackTrace();

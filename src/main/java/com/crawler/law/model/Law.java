@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Law {
-    private String id;
+    private Long id;
     private String name;
     private String number;
     private long agencyId;
@@ -24,12 +24,13 @@ public class Law {
     private String crawlerAgencyName;
     private String crawlerCategoryName;
     private ArrayList<String> category;
+    private String metaUrl;
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -183,5 +184,13 @@ public class Law {
 
     public void setCategory(ArrayList<String> category) {
         this.category = category;
+    }
+
+    public String getMetaUrl() {
+        return metaUrl;
+    }
+
+    public void setMetaUrl(String metaUrl) {
+        this.metaUrl = metaUrl;
     }
 }
