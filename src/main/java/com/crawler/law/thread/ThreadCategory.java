@@ -31,6 +31,7 @@ public class ThreadCategory implements Runnable  {
                     logger.info(String.format(url, i));
                     List<Law> laws = thuKyLuatParser.readQuery(String.format(url, i));
 
+                    System.out.println("LAW_SIZE[" + laws.size() + "]");
                     for (Law law : laws) {
                         lawDAO.insertCategory(law);
                     }

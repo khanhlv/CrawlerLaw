@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LawDAO {
 
@@ -48,6 +50,8 @@ public class LawDAO {
             return;
         }
 
+        System.out.println("INSERT[" + law.getCrawlerSource() + "]");
+
         String sqlStory = "INSERT INTO LAW(LAW_NAME,LAW_DATE_ISSUED,LAW_UPDATED_DATE,META_URL,META_TITLE,META_DESCRIPTION,META_KEYWORD,CRAWLER_CATEGORY,CRAWLER_SOURCE,STATUS) " +
                 "VALUES (?,?,?,?,?,?,?,?,?,?)";
         try (Connection con = ConnectionPool.getTransactional();
@@ -84,7 +88,9 @@ public class LawDAO {
 
         String sqlStory = "UPDATE LAW SET LAW_NUMBER = ?, " +
                 "LAW_NUMBER_PUBLICATION = ?, LAW_DATE_PUBLICATION = ?, LAW_AGENCY_ID = ?, " +
-                "LAW_TYPE_ID = ?, LAW_SIGNED = ?, LAW_STATUS = ?, LAW_CONTENT = ?, STATUS = ?, META_URL = ? WHERE LAW_ID = ?";
+                "LAW_TYPE_ID = ?, LAW_SIGNED = ?, LAW_STATUS = ?, " +
+                "LAW_CONTENT = ?, STATUS = ?, META_URL = ? " +
+                "CRAWLER_AGENCY_NAME = ?, CRAWLER_TYPE_NAME = ? WHERE LAW_ID = ?";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -98,7 +104,9 @@ public class LawDAO {
             pStmt.setString(8, law.getContent());
             pStmt.setLong(9, 1);
             pStmt.setString(10, law.getMetaUrl());
-            pStmt.setLong(11, law.getId());
+            pStmt.setString(11, law.getCrawlerAgencyName());
+            pStmt.setString(12, law.getCrawlerTypeName());
+            pStmt.setLong(13, law.getId());
 
             pStmt.executeUpdate();
         } catch (Exception ex) {
@@ -152,5 +160,59 @@ public class LawDAO {
         }
 
         return false;
+    }
+
+    public Map<String, String> selectTypeAll() throws SQLException {
+        String sqlStory = "SELECT * FROM LAW_TYPE";
+        Map<String, String> mapData = new HashMap<>();
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            ResultSet resultSet = pStmt.executeQuery();
+
+            while(resultSet.next()) {
+                mapData.put(resultSet.getString("LAW_TYPE_NAME"), resultSet.getString("LAW_TYPE_ID"));
+            }
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return mapData;
+    }
+
+    public Map<String, String> selectCategoryAll() throws SQLException {
+        String sqlStory = "SELECT * FROM CATEGORY";
+        Map<String, String> mapData = new HashMap<>();
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            ResultSet resultSet = pStmt.executeQuery();
+
+            while(resultSet.next()) {
+                mapData.put(resultSet.getString("CATEGORY_NAME"), resultSet.getString("CATEGORY_ID"));
+            }
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return mapData;
+    }
+
+    public Map<String, String> selectAgencyAll() throws SQLException {
+        String sqlStory = "SELECT * FROM LAW_AGENCY";
+        Map<String, String> mapData = new HashMap<>();
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            ResultSet resultSet = pStmt.executeQuery();
+
+            while(resultSet.next()) {
+                mapData.put(resultSet.getString("LAW_AGENCY_NAME"), resultSet.getString("LAW_AGENCY_ID"));
+            }
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return mapData;
     }
 }

@@ -231,12 +231,12 @@ public class ThuKyLuatParser {
             }
         }
 
-        System.out.println(law.getName());
-        System.out.println(law.getCrawlerSource());
-        System.out.println(law.getCrawlerCategoryName() + "#" + StringUtils.join(law.getCategory(), ","));
-        System.out.println(dateIssued);
-        System.out.println(dateUpdate);
-        System.out.println("-------------------------------------");
+//        System.out.println(law.getName());
+//        System.out.println(law.getCrawlerSource());
+//        System.out.println(law.getCrawlerCategoryName() + "#" + StringUtils.join(law.getCategory(), ","));
+//        System.out.println(dateIssued);
+//        System.out.println(dateUpdate);
+//        System.out.println("-------------------------------------");
         return law;
     }
 
