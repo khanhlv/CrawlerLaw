@@ -24,7 +24,7 @@ public class ThreadCategory implements Runnable  {
     @Override
     public void run() {
 
-            String url = "https://thukyluat.vn/tim-kiem/?page=%s";
+            String url = "http://thukyluat.vn/tim-kiem/?page=%s";
 
             for (int i = 1; i <= page; i++) {
                 try {
