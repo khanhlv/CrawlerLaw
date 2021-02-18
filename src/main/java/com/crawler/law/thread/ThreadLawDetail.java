@@ -9,6 +9,7 @@ import com.crawler.law.util.GZipUtil;
 import com.crawler.law.util.GoogleDriverUtil;
 import com.crawler.law.util.ResourceUtil;
 import com.google.api.services.drive.Drive;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,15 +54,15 @@ public class ThreadLawDetail implements Runnable {
                         if (content == null) {
                             lawDAO.updateStatus(data.getId(), -1);
                         } else {
+                            if (StringUtils.isNotBlank(content.getContent())) {
+                                InputStream inputStream = GZipUtil.compress(content.getContent());
 
-                            InputStream inputStream = GZipUtil.compress(content.getContent());
+                                String fileId = GoogleDriverUtil.uploadFile(driveFiles, inputStream,content.getId() + ".html.gz", ResourceUtil.getValue("google.driver.folder"));
 
-                            String fileId = GoogleDriverUtil.uploadFile(driveFiles, inputStream,content.getId() + ".html.gz", ResourceUtil.getValue("google.driver.folder"));
-
-                            content.setGoogleDriveId(fileId);
+                                content.setGoogleDriveId(fileId);
+                            }
 
                             lawDAO.update(content);
-
                         }
 
                     } catch (Exception ex) {

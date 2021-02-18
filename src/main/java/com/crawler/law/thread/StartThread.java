@@ -53,7 +53,7 @@ public class StartThread {
                 timer.schedule(timerTask, 0, time * 60 * 1000);
 
                 for (int i = 1; i <= threadDataCount; i++) {
-                    new Thread(new ThreadLawDetail(i)).start();
+                    new Thread(new ThreadLawDetail(i, driveFiles)).start();
                     Thread.sleep(5000);
                 }
                 break;
@@ -65,6 +65,7 @@ public class StartThread {
                     @Override
                     public void run() {
                         new Thread(new ThreadCategory(page)).start();
+                        System.out.println("...............................................................");
                     }
                 };
 

@@ -47,7 +47,7 @@ public final class GoogleDriverUtil {
         SCOPES.add(DriveScopes.DRIVE_APPDATA);
     }
 //    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
-    private static final String CREDENTIALS_FILE_PATH = "/credentials_phapluatcongdong1.json";
+    private static final String CREDENTIALS_FILE_PATH = "/credentials_phapluatcongdongvn1.json";
     /**
      * Creates an authorized Credential object.
      * @param HTTP_TRANSPORT The network HTTP Transport.
@@ -270,8 +270,8 @@ public final class GoogleDriverUtil {
 
     public static void main(String... args) throws Exception {
 
-//        Drive.Files driveFiles = GoogleDriverUtil.driveFiles();
-//
+//        GoogleDriverUtil.driveService();
+
 //        ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
 //
 //        Law law = thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", 12L);
