@@ -89,7 +89,7 @@ public class LawDAO {
         String sqlStory = "UPDATE LAW SET LAW_NUMBER = ?, " +
                 "LAW_NUMBER_PUBLICATION = ?, LAW_DATE_PUBLICATION = ?, LAW_AGENCY_ID = ?, " +
                 "LAW_TYPE_ID = ?, LAW_SIGNED = ?, LAW_STATUS = ?, " +
-                "LAW_CONTENT = ?, STATUS = ?, META_URL = ? " +
+                "LAW_CONTENT = ?, STATUS = ?, META_URL = ?, " +
                 "CRAWLER_AGENCY_NAME = ?, CRAWLER_TYPE_NAME = ?, CRAWLER_LAW_REFER = ? WHERE LAW_ID = ?";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {

@@ -39,6 +39,7 @@ public class ThreadLawDetail implements Runnable {
                     Law data = ShareQueue.shareQueueItem.poll();
 
                     String link = "http://thukyluat.vn" + data.getCrawlerSource();
+                    String fileId = "";
                     try {
 
                         logger.debug(this.threadName + "## GET_START [URL=" + link + "]");
@@ -57,16 +58,21 @@ public class ThreadLawDetail implements Runnable {
                             if (StringUtils.isNotBlank(content.getContent())) {
                                 InputStream inputStream = GZipUtil.compress(content.getContent());
 
-                                String fileId = GoogleDriverUtil.uploadFile(driveFiles, inputStream,content.getId() + ".html.gz", ResourceUtil.getValue("google.driver.folder"));
-
-                                content.setGoogleDriveId(fileId);
+                                fileId = GoogleDriverUtil.uploadFile(driveFiles, inputStream,content.getId() + ".html.gz", ResourceUtil.getValue("google.driver.folder"));
                             }
+
+                            content.setGoogleDriveId(fileId);
 
                             lawDAO.update(content);
                         }
 
                     } catch (Exception ex) {
                         logger.error(this.threadName + " ## ERROR[" + link + "]", ex);
+
+                        if (StringUtils.isNotBlank(fileId)) {
+                            GoogleDriverUtil.deleteFile(driveFiles, fileId);
+                        }
+
                         lawDAO.updateStatus(data.getId(), -1);
                     }
                 }
