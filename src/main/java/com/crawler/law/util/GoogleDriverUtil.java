@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.crawler.law.model.Law;
+import com.crawler.law.parser.ThuKyLuatParser;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -29,7 +31,7 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 
 public final class GoogleDriverUtil {
-    public static final String APPLICATION_NAME = "Google Drive TruyenDi";
+    public static final String APPLICATION_NAME = "Google Drive";
     public static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     public static final String TOKENS_DIRECTORY_PATH = "tokens";
 
@@ -45,8 +47,7 @@ public final class GoogleDriverUtil {
         SCOPES.add(DriveScopes.DRIVE_APPDATA);
     }
 //    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
-    private static final String CREDENTIALS_FILE_PATH = "/credentials_truyendi.json";
-
+    private static final String CREDENTIALS_FILE_PATH = "/credentials_phapluatcongdong1.json";
     /**
      * Creates an authorized Credential object.
      * @param HTTP_TRANSPORT The network HTTP Transport.
@@ -269,17 +270,15 @@ public final class GoogleDriverUtil {
 
     public static void main(String... args) throws Exception {
 
-//        Drive drive = GoogleDriverUtil.driveService();
-
-//        ParseTruyenFull parseTruyenFull = new ParseTruyenFull();
-//        Content content = parseTruyenFull.readContent("https://truyenfull.vn/thuong-thien/chuong-797/");;
-
-//        GoogleDriverUtil.uploadFile(drive,  new java.io.File("D:/text.txt.gz"), "application/gzip", "1-WvE-4xcD81drSN_5bnOFpAj73rX_RHN");
-
-//        InputStream inputStream = GZipUtil.compress(content.getContent());
+//        Drive.Files driveFiles = GoogleDriverUtil.driveFiles();
 //
-//        System.out.println(inputStream.available());
-//        GoogleDriverUtil.uploadFile(drive, inputStream, "khanh.txt.gz","1-WvE-4xcD81drSN_5bnOFpAj73rX_RHN");
+//        ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
+//
+//        Law law = thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", 12L);
+//
+//        InputStream inputStream = GZipUtil.compress(law.getContent());
+//
+//        uploadFile(driveFiles, inputStream,"khanh.txt.gz","12tENxZpqs_qUd3PCzDTxpO-Wpsk5pQ9j");
 
 //        GoogleDriverUtil.listFiles(drive);
 

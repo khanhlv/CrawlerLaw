@@ -89,10 +89,6 @@ public class ThuKyLuatParser {
             }
         });
 
-        FileUtils.writeStringToFile(new File(ResourceUtil.getValue("data.path") + "/data/" + id + ".html"), htmlContent, "UTF-8");
-
-        GZipUtil.compressGZIP(htmlContent, new File(ResourceUtil.getValue("data.path") + "/data/" + id + ".html.gz"));
-
         Elements elsNDTomTat = doc.select("#NDTomTat").select("table tbody tr");
 
         if (elsNDTomTat.size() == 0) {

@@ -26,6 +26,7 @@ public class Law {
     private String crawlerLawRefer;
     private ArrayList<String> category;
     private String metaUrl;
+    private String googleDriveId;
 
     public Long getId() {
         return id;
@@ -201,5 +202,13 @@ public class Law {
 
     public void setCrawlerLawRefer(String crawlerLawRefer) {
         this.crawlerLawRefer = crawlerLawRefer;
+    }
+
+    public String getGoogleDriveId() {
+        return googleDriveId;
+    }
+
+    public void setGoogleDriveId(String googleDriveId) {
+        this.googleDriveId = googleDriveId;
     }
 }

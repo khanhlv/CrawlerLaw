@@ -4,7 +4,9 @@ import com.crawler.law.core.ShareQueue;
 import com.crawler.law.dao.LawDAO;
 import com.crawler.law.enums.ThreadMod;
 import com.crawler.law.model.Law;
+import com.crawler.law.util.GoogleDriverUtil;
 import com.crawler.law.util.ResourceUtil;
+import com.google.api.services.drive.Drive;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ public class StartThread {
 
         switch (threadMod) {
             case SINGLE_DETAIL:
+                Drive.Files driveFiles = GoogleDriverUtil.driveFiles();
 
                 TimerTask timerTask = new TimerTask() {
                     @Override

@@ -101,7 +101,7 @@ public class LawDAO {
             pStmt.setLong(5, law.getTypeId());
             pStmt.setString(6, law.getSigned());
             pStmt.setLong(7, law.getLawStatus());
-            pStmt.setString(8, law.getContent());
+            pStmt.setString(8, law.getGoogleDriveId());
             pStmt.setLong(9, 1);
             pStmt.setString(10, law.getMetaUrl());
             pStmt.setString(11, law.getCrawlerAgencyName());
