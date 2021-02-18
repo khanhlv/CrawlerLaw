@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.crawler.law.util.GZipUtil;
 import com.crawler.law.util.StringUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -51,7 +53,12 @@ public class ThuKyLuatParser {
             FileUtils.writeStringToFile(new File("data/html/" + id + ".html"), doc.html());
         }
 
+        removeComments(doc);
+
         Elements elsContent = doc.select("#NDDayDu").select(".MainContentAll");
+        elsContent.select("a").removeAttr("onmouseover");
+        elsContent.select("a").removeAttr("onmouseout");
+        elsContent.select("a[href]").attr("href", "#");
 
         String htmlContent = elsContent.html();
 
@@ -65,13 +72,26 @@ public class ThuKyLuatParser {
             String tipHtml = doc.select("#NDDayDu").select(tipType).toString();
 
             tipList.add(tipHtml);
-//            System.out.println(tipHtml);
-//            System.out.println("-----------------");
         });
 
         if (StringUtils.isNotBlank(htmlContent)) {
             htmlContent += "<div style=\"display: none\">" + StringUtils.join(tipList, "") + "</div>";
         }
+
+        Elements lawRefer = elsContent.select("a[href]");
+
+        ArrayList<String> referLawList = new ArrayList<>();
+
+        lawRefer.stream().forEach(els -> {
+            String href = els.attr("href");
+            if (href.contains(".html")) {
+                referLawList.add(els.text().trim());
+            }
+        });
+
+        FileUtils.writeStringToFile(new File(ResourceUtil.getValue("data.path") + "/data/" + id + ".html"), htmlContent, "UTF-8");
+
+        GZipUtil.compressGZIP(htmlContent, new File(ResourceUtil.getValue("data.path") + "/data/" + id + ".html.gz"));
 
         Elements elsNDTomTat = doc.select("#NDTomTat").select("table tbody tr");
 
@@ -109,7 +129,14 @@ public class ThuKyLuatParser {
         // Tình trạng
 //        System.out.println(elsNDTomTat.get(4).select("td").get(4).text());
 
-        return toData(id, number, numberPublic, datePublic, agency, type, signes, htmlContent);
+        return toData(id, number, numberPublic, datePublic, agency, type, signes, htmlContent, StringUtils.join(referLawList, "|"));
+    }
+
+    public void removeComments(Element e) {
+        e.childNodes().stream()
+                .filter(n -> n.nodeName().equals("#comment")).collect(Collectors.toList())
+                .forEach(n -> n.remove());
+        e.children().forEach(elem -> removeComments(elem));
     }
 
     public List<Law> readQuery(String url) throws Exception {
@@ -165,7 +192,7 @@ public class ThuKyLuatParser {
 
     private Law toData(Long id, String number, String numberPublic,
                        String datePublic, String agency, String type,
-                       String signed, String content) {
+                       String signed, String content, String lawRefer) {
 
         Law law = new Law();
         law.setId(id);
@@ -192,6 +219,7 @@ public class ThuKyLuatParser {
         law.setLawStatus(0);
         law.setContent(content);
         law.setMetaUrl(StringUtil.stripAccents(type + " " +  number + " ban hành " + agency, "-"));
+        law.setCrawlerLawRefer(lawRefer);
 
         System.out.println(law.getNumber());
         System.out.println(law.getNumberPublic());
@@ -200,6 +228,7 @@ public class ThuKyLuatParser {
         System.out.println(law.getCrawlerTypeName() + "#" + law.getTypeId());
         System.out.println(law.getSigned());
         System.out.println(law.getMetaUrl());
+        System.out.println(law.getCrawlerLawRefer());
 //        System.out.println(law.getContent());
         System.out.println("-------------------------------------");
 
@@ -245,8 +274,8 @@ public class ThuKyLuatParser {
             ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
             //thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
 
-//            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", "12");
-            thuKyLuatParser.readDetail("http://thukyluat.vn//cv/cong-van-641-bnv-bcd-2021-huong-dan-trien-khai-cuoc-dieu-tra-co-so-hanh-chinh-718c9.html", 12L);
+            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", 12L);
+//            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/thong-tu-12-2021-tt-btc-muc-thu-khai-nop-phi-su-dung-ket-cau-ha-tang-duong-sat-718cd.html", 12L);
 
         } catch (Exception e) {
             e.printStackTrace();

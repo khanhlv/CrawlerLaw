@@ -23,6 +23,7 @@ public class Law {
     private String crawlerTypeName;
     private String crawlerAgencyName;
     private String crawlerCategoryName;
+    private String crawlerLawRefer;
     private ArrayList<String> category;
     private String metaUrl;
 
@@ -192,5 +193,13 @@ public class Law {
 
     public void setMetaUrl(String metaUrl) {
         this.metaUrl = metaUrl;
+    }
+
+    public String getCrawlerLawRefer() {
+        return crawlerLawRefer;
+    }
+
+    public void setCrawlerLawRefer(String crawlerLawRefer) {
+        this.crawlerLawRefer = crawlerLawRefer;
     }
 }

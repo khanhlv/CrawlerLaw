@@ -20,7 +20,7 @@ public class LawDAO {
     public List<Law> queueList(int limit) throws SQLException {
 
         List<Law> dataList = new ArrayList<>();
-        String sqlStory = "SELECT TOP "+ limit+" * FROM LAW WHERE STATUS = 0";
+        String sqlStory = "SELECT TOP "+ limit+" * FROM LAW WHERE STATUS = 0 ORDER BY LAW_UPDATED_DATE DESC";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -90,7 +90,7 @@ public class LawDAO {
                 "LAW_NUMBER_PUBLICATION = ?, LAW_DATE_PUBLICATION = ?, LAW_AGENCY_ID = ?, " +
                 "LAW_TYPE_ID = ?, LAW_SIGNED = ?, LAW_STATUS = ?, " +
                 "LAW_CONTENT = ?, STATUS = ?, META_URL = ? " +
-                "CRAWLER_AGENCY_NAME = ?, CRAWLER_TYPE_NAME = ? WHERE LAW_ID = ?";
+                "CRAWLER_AGENCY_NAME = ?, CRAWLER_TYPE_NAME = ?, CRAWLER_LAW_REFER = ? WHERE LAW_ID = ?";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -106,7 +106,8 @@ public class LawDAO {
             pStmt.setString(10, law.getMetaUrl());
             pStmt.setString(11, law.getCrawlerAgencyName());
             pStmt.setString(12, law.getCrawlerTypeName());
-            pStmt.setLong(13, law.getId());
+            pStmt.setString(13, law.getCrawlerLawRefer());
+            pStmt.setLong(14, law.getId());
 
             pStmt.executeUpdate();
         } catch (Exception ex) {

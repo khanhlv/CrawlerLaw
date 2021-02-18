@@ -55,7 +55,21 @@ public class StartThread {
                 }
                 break;
             case SINGLE_CATEGORY:
-                new Thread(new ThreadCategory(10)).start();
+
+                int page = NumberUtils.toInt(ResourceUtil.getValue("data.limit.category.page"), 10); //Phut
+
+                TimerTask timerTaskCategory = new TimerTask() {
+                    @Override
+                    public void run() {
+                        new Thread(new ThreadCategory(page)).start();
+                    }
+                };
+
+                int timeCategory = NumberUtils.toInt(ResourceUtil.getValue("data.time.get.category"), 1); //Phut
+
+                Timer timerCategory = new Timer();
+                timerCategory.schedule(timerTaskCategory, 0, timeCategory * 60 * 1000);
+
                 break;
         }
 
