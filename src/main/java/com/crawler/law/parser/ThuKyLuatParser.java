@@ -82,12 +82,7 @@ public class ThuKyLuatParser {
 
         ArrayList<String> referLawList = new ArrayList<>();
 
-        lawRefer.stream().forEach(els -> {
-            String href = els.attr("href");
-            if (href.contains(".html")) {
-                referLawList.add(els.text().trim());
-            }
-        });
+        lawRefer.stream().forEach(els -> referLawList.add(els.text().trim()));
 
         Elements elsNDTomTat = doc.select("#NDTomTat").select("table tbody tr");
 
@@ -270,7 +265,7 @@ public class ThuKyLuatParser {
             ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
             //thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
 
-            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/luat-sua-doi-bo-luat-lao-dong-51766.html", 12L);
+            thuKyLuatParser.readDetail("http://thukyluat.vn/cv/cong-van-641-bnv-bcd-2021-trien-khai-cuoc-dieu-tra-co-so-hanh-chinh-718c9.html", 12L);
 //            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/thong-tu-12-2021-tt-btc-muc-thu-khai-nop-phi-su-dung-ket-cau-ha-tang-duong-sat-718cd.html", 12L);
 
         } catch (Exception e) {
