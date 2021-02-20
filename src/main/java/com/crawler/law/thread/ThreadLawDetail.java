@@ -41,16 +41,9 @@ public class ThreadLawDetail implements Runnable {
                     String link = "http://thukyluat.vn" + data.getCrawlerSource();
                     String fileId = "";
                     try {
-
-                        logger.debug(this.threadName + "## GET_START [URL=" + link + "]");
-
                         long start = System.currentTimeMillis();
 
                         Law content = thuKyLuatParser.readDetail(link, data.getId());
-
-                        long end = System.currentTimeMillis() - start;
-
-                        logger.debug(this.threadName + "## GET_END [URL=" +link + "][TIME=" + end  + "]");
 
                         if (content == null) {
                             lawDAO.updateStatus(data.getId(), -1);
@@ -65,6 +58,10 @@ public class ThreadLawDetail implements Runnable {
 
                             lawDAO.update(content);
                         }
+
+                        long end = System.currentTimeMillis() - start;
+
+                        logger.debug(this.threadName + "## GET ID["+data.getId()+"][URL=" +link + "][TIME=" + end  + "]");
 
                     } catch (Exception ex) {
                         logger.error(this.threadName + " ## ERROR[" + link + "]", ex);

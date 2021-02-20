@@ -7,10 +7,8 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.crawler.law.util.GZipUtil;
@@ -82,7 +80,11 @@ public class ThuKyLuatParser {
 
         ArrayList<String> referLawList = new ArrayList<>();
 
-        lawRefer.stream().forEach(els -> referLawList.add(els.text().trim()));
+        lawRefer.stream().forEach(els -> {
+            if (!referLawList.contains(els.text().trim())) {
+                referLawList.add(els.text().trim());
+            }
+        });
 
         Elements elsNDTomTat = doc.select("#NDTomTat").select("table tbody tr");
 
@@ -103,7 +105,7 @@ public class ThuKyLuatParser {
         String signes = elsNDTomTat.get(1).select("td").get(4).text().trim();
 
         // Ngày ban hành
-//        System.out.println(elsNDTomTat.get(2).select("td").get(1).text());
+        String dateIssue = elsNDTomTat.get(2).select("td").get(1).text().trim();
 
         // Ngày hiệu lực
 //        System.out.println(elsNDTomTat.get(2).select("td").get(4).text());
@@ -120,7 +122,7 @@ public class ThuKyLuatParser {
         // Tình trạng
 //        System.out.println(elsNDTomTat.get(4).select("td").get(4).text());
 
-        return toData(id, number, numberPublic, datePublic, agency, type, signes, htmlContent, StringUtils.join(referLawList, "|"));
+        return toData(id, number, numberPublic, datePublic, agency, type, signes, htmlContent, StringUtils.join(referLawList, "|"), dateIssue);
     }
 
     public void removeComments(Element e) {
@@ -185,7 +187,7 @@ public class ThuKyLuatParser {
 
     private Law toData(Long id, String number, String numberPublic,
                        String datePublic, String agency, String type,
-                       String signed, String content, String lawRefer) {
+                       String signed, String content, String lawRefer, String dateIssue) {
 
         Law law = new Law();
         law.setId(id);
@@ -202,6 +204,11 @@ public class ThuKyLuatParser {
             law.setDatePublic(new Date(0));
         }
 
+        try {
+            law.setDateIssued(dateFormat.parse(dateIssue));
+        } catch (ParseException e) {
+        }
+
         law.setCrawlerAgencyName(agency);
         law.setAgencyId(NumberUtils.toLong(ShareApplication.AGENCY_MAP.get(agency)));
 
@@ -211,7 +218,9 @@ public class ThuKyLuatParser {
         law.setSigned(signed);
         law.setLawStatus(0);
         law.setContent(content);
-        law.setMetaUrl(StringUtil.stripAccents(type + " " +  number + " ban hành " + agency, "-"));
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(law.getDateIssued());
+        law.setMetaUrl(StringUtil.stripAccents(type + " " +  number + " ban hành " + agency + " nam " + calendar.get(Calendar.YEAR), "-"));
         law.setCrawlerLawRefer(lawRefer);
 
         System.out.println(law.getNumber());
