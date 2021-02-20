@@ -175,7 +175,9 @@ public class ThuKyLuatParser {
             String dateIssued = elsDate.get(0).select("span").text().trim();
             String dateUpdated = elsDate.select(".cap-nhat").select("span").text().trim();
 
-            lisData.add(toData(title, crawlerSource, StringUtils.join(categoryNameList, "|"), categoryList, dateIssued, dateUpdated));
+            if (!crawlerSource.contains("#VanBanTA")) {
+                lisData.add(toData(title, crawlerSource, StringUtils.join(categoryNameList, "|"), categoryList, dateIssued, dateUpdated));
+            }
         });
 
         return lisData;
