@@ -54,6 +54,26 @@ public class ThuKyLuatParser {
         removeComments(doc);
 
         Elements elsContent = doc.select("#NDDayDu").select(".MainContentAll");
+
+        if (StringUtils.isBlank(elsContent.text())) {
+            if (doc.toString().contains("/Document/MainContent/")) {
+                String data = doc.toString().replaceAll("\\+", "").replaceAll("\\s+","");
+                data = data.substring(data.indexOf("/Document/MainContent/"), data.lastIndexOf("\"?IsComplete=True\""));
+                data = data.replaceAll("\"", "") + "?IsComplete=True&hl=vi";
+
+                Connection connectionContent = Jsoup.connect("http://thukyluat.vn" + data)
+                        .userAgent(UserAgent.getUserAgent())
+                        .timeout(Consts.TIMEOUT)
+                        .maxBodySize(0);
+
+                Document docContent = connectionContent.get();
+
+                removeComments(docContent);
+
+                elsContent = docContent.select(".MainContentAll");
+            }
+        }
+
         elsContent.select("a").removeAttr("onmouseover");
         elsContent.select("a").removeAttr("onmouseout");
         elsContent.select("a[href]").attr("href", "#");
@@ -231,7 +251,7 @@ public class ThuKyLuatParser {
         System.out.println(law.getSigned());
         System.out.println(law.getMetaUrl());
         System.out.println(law.getCrawlerLawRefer());
-//        System.out.println(law.getContent());
+        System.out.println("Content: " + StringUtils.isNotBlank(law.getContent()));
         System.out.println("-------------------------------------");
 
         return law;
@@ -276,8 +296,10 @@ public class ThuKyLuatParser {
             ThuKyLuatParser thuKyLuatParser = new ThuKyLuatParser();
             //thuKyLuatParser.readQuery("https://thukyluat.vn/tim-kiem/?page=19054");
 
-            thuKyLuatParser.readDetail("http://thukyluat.vn/cv/cong-van-641-bnv-bcd-2021-trien-khai-cuoc-dieu-tra-co-so-hanh-chinh-718c9.html", 12L);
+//            thuKyLuatParser.readDetail("http://thukyluat.vn/cv/cong-van-641-bnv-bcd-2021-trien-khai-cuoc-dieu-tra-co-so-hanh-chinh-718c9.html", 12L);
 //            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/thong-tu-12-2021-tt-btc-muc-thu-khai-nop-phi-su-dung-ket-cau-ha-tang-duong-sat-718cd.html", 12L);
+
+            thuKyLuatParser.readDetail("http://thukyluat.vn/vb/quyet-dinh-22-2003-qd-ub-quy-dinh-sua-doi-quyet-dinh-07-1999-qd-ub-da-nang-4ad94.html", 12L);
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -27,7 +27,7 @@ public final class GZipUtil {
         }
     }
 
-    private static final int BUFFER_SIZE_BYTES = 512 * 1024;
+    private static final int BUFFER_SIZE_BYTES = 512 * 1024 * 1024;
 
     public static InputStream compress(final String data) throws IOException {
         final PipedInputStream compressedDataStream = new PipedInputStream(BUFFER_SIZE_BYTES);
