@@ -58,10 +58,14 @@ public class ThuKyLuatParser {
         if (StringUtils.isBlank(elsContent.text())) {
             if (doc.toString().contains("/Document/MainContent/")) {
                 String data = doc.toString().replaceAll("\\+", "").replaceAll("\\s+","");
-                data = data.substring(data.indexOf("/Document/MainContent/"), data.lastIndexOf("\"?IsComplete=True\""));
+                data = data.substring(data.indexOf("/Document/MainContent/"), data.indexOf("\"?IsComplete=True\""));
                 data = data.replaceAll("\"", "") + "?IsComplete=True&hl=vi";
 
-                Connection connectionContent = Jsoup.connect("http://thukyluat.vn" + data)
+                String urlData = "http://thukyluat.vn" + data;
+
+                System.out.println("DATA_URL[" + urlData +"]");
+
+                Connection connectionContent = Jsoup.connect(urlData)
                         .userAgent(UserAgent.getUserAgent())
                         .timeout(Consts.TIMEOUT)
                         .maxBodySize(0);
@@ -299,7 +303,7 @@ public class ThuKyLuatParser {
 //            thuKyLuatParser.readDetail("http://thukyluat.vn/cv/cong-van-641-bnv-bcd-2021-trien-khai-cuoc-dieu-tra-co-so-hanh-chinh-718c9.html", 12L);
 //            thuKyLuatParser.readDetail("https://thukyluat.vn/vb/thong-tu-12-2021-tt-btc-muc-thu-khai-nop-phi-su-dung-ket-cau-ha-tang-duong-sat-718cd.html", 12L);
 
-            thuKyLuatParser.readDetail("http://thukyluat.vn/vb/quyet-dinh-22-2003-qd-ub-quy-dinh-sua-doi-quyet-dinh-07-1999-qd-ub-da-nang-4ad94.html", 12L);
+            thuKyLuatParser.readDetail("http://thukyluat.vn/vb/thong-tu-36-2013-byt-btc-huong-dan-dau-thau-mua-thuoc-co-so-y-te-35cca.html", 12L);
 
         } catch (Exception e) {
             e.printStackTrace();
