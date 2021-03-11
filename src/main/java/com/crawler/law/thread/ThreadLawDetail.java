@@ -5,6 +5,7 @@ import com.crawler.law.core.ShareQueue;
 import com.crawler.law.dao.LawDAO;
 import com.crawler.law.model.Law;
 import com.crawler.law.parser.ThuKyLuatParser;
+import com.crawler.law.util.FTPUtil;
 import com.crawler.law.util.GZipUtil;
 import com.crawler.law.util.GoogleDriverUtil;
 import com.crawler.law.util.ResourceUtil;
@@ -51,7 +52,19 @@ public class ThreadLawDetail implements Runnable {
                             if (StringUtils.isNotBlank(content.getContent())) {
                                 InputStream inputStream = GZipUtil.compress(content.getContent());
 
-                                fileId = GoogleDriverUtil.uploadFile(driveFiles, inputStream,content.getId() + ".html.gz", ResourceUtil.getValue("google.driver.folder"));
+                                fileId = GoogleDriverUtil.uploadFile(driveFiles, inputStream, content.getId() + ".html.gz", ResourceUtil.getValue("google.driver.folder"));
+
+                                try {
+                                    FTPUtil ftpUploader = new FTPUtil("123.30.168.98", "khanhlv4", "@");
+
+                                    if (ftpUploader != null && ftpUploader.getFtpClient().isConnected()) {
+                                        ftpUploader.uploadFile(inputStream, data.getId() + ".html.gz", "\\khanhlv\\phapluatcongdong.vn\\wwwroot\\upload\\");
+
+                                        ftpUploader.disconnect();
+                                    }
+                                } catch (Exception ex) {
+                                    logger.warn(this.threadName + " ## WARN_FTP[" + data.getId() + ".html.gz" + "]", ex);
+                                }
                             }
 
                             content.setGoogleDriveId(fileId);

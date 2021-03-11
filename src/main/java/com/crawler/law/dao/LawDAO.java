@@ -44,6 +44,31 @@ public class LawDAO {
         return dataList;
     }
 
+    public List<Law> queueList() throws SQLException {
+
+        List<Law> dataList = new ArrayList<>();
+        String sqlStory = "SELECT  * FROM LAW WHERE status = 1 and law_content != ''";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            ResultSet resultSet = pStmt.executeQuery();
+            while(resultSet.next()) {
+
+                Law data = new Law();
+                data.setId(resultSet.getLong("LAW_ID"));
+                data.setContent(resultSet.getString("LAW_CONTENT"));
+
+                dataList.add(data);
+            }
+
+            resultSet.close();
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return dataList;
+    }
+
     public void insertCategory(Law law) throws SQLException {
 
         if (checkExists(law.getCrawlerSource())) {
