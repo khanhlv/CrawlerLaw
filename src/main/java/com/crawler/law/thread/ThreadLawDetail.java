@@ -53,18 +53,6 @@ public class ThreadLawDetail implements Runnable {
                                 InputStream inputStream = GZipUtil.compress(content.getContent());
 
                                 fileId = GoogleDriverUtil.uploadFile(driveFiles, inputStream, content.getId() + ".html.gz", ResourceUtil.getValue("google.driver.folder"));
-
-                                try {
-                                    FTPUtil ftpUploader = new FTPUtil("123.30.168.98", "khanhlv4", "@");
-
-                                    if (ftpUploader != null && ftpUploader.getFtpClient().isConnected()) {
-                                        ftpUploader.uploadFile(inputStream, data.getId() + ".html.gz", "\\khanhlv\\phapluatcongdong.vn\\wwwroot\\upload\\");
-
-                                        ftpUploader.disconnect();
-                                    }
-                                } catch (Exception ex) {
-                                    logger.warn(this.threadName + " ## WARN_FTP[" + data.getId() + ".html.gz" + "]", ex);
-                                }
                             }
 
                             content.setGoogleDriveId(fileId);
