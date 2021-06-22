@@ -6,4 +6,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 public final class ShareQueue {
     public static ConcurrentLinkedDeque<Law> shareQueueItem = new ConcurrentLinkedDeque<>();
+
+    public static ConcurrentLinkedDeque<Law> shareQueueStatusItem = new ConcurrentLinkedDeque<>();
 }

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,33 @@ public class LawDAO {
 
                 data.setStatus(resultSet.getInt("STATUS"));
 
+                dataList.add(data);
+            }
+
+            resultSet.close();
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return dataList;
+    }
+
+    public List<Law> queueListStatusExpired(int limit) throws SQLException {
+
+        List<Law> dataList = new ArrayList<>();
+        String sqlStory = "SELECT TOP "+ limit+" * FROM LAW WHERE STATUS_DATE_EXPIRED = 0 ORDER BY LAW_UPDATED_DATE DESC";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            ResultSet resultSet = pStmt.executeQuery();
+            while(resultSet.next()) {
+
+                Law data = new Law();
+                data.setId(resultSet.getLong("LAW_ID"));
+                data.setNumber(resultSet.getString("LAW_NUMBER"));
+                data.setDateIssued(resultSet.getDate("LAW_DATE_ISSUED"));
+                data.setCrawlerTypeName(resultSet.getString("CRAWLER_TYPE_NAME"));
+                data.setCrawlerAgencyName(resultSet.getString("CRAWLER_AGENCY_NAME"));
                 dataList.add(data);
             }
 
@@ -240,5 +268,37 @@ public class LawDAO {
         }
 
         return mapData;
+    }
+
+    public void updateStatusExpired(long lawId, long status) throws SQLException {
+
+        String sqlStory = "UPDATE LAW SET STATUS_DATE_EXPIRED = ? WHERE LAW_ID = ?";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            pStmt.setLong(1, status);
+            pStmt.setLong(2, lawId);
+
+            pStmt.executeUpdate();
+        } catch (Exception ex) {
+            throw ex;
+        }
+    }
+
+    public void updateContentExpired(Law content) throws SQLException {
+
+        String sqlStory = "UPDATE LAW SET LAW_DATE_EFFECTIVE = ?, LAW_DATE_EXPIRED = ?, LAW_STATUS = ? WHERE LAW_ID = ?";
+        try (Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            pStmt.setDate(1, content.getDateEffective() != null ? new Date(content.getDateEffective().getTime()) : null);
+            pStmt.setDate(2, content.getDateExpired() != null ? new Date(content.getDateExpired().getTime()): null);
+            pStmt.setLong(3, content.getLawStatus());
+            pStmt.setLong(4, content.getId());
+
+            pStmt.executeUpdate();
+        } catch (Exception ex) {
+            throw ex;
+        }
     }
 }

@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,15 @@ import com.google.gson.Gson;
 public class VanBanPhapLuatCoParser {
     private static final Logger logger = LoggerFactory.getLogger(VanBanPhapLuatCoParser.class);
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+    private static Map<String, Long> mapLawStatus = new HashMap<>();
+
+    static  {
+        mapLawStatus.put("Còn hiệu lực", 1L);
+        mapLawStatus.put("Hết hiệu lực", 2L);
+        mapLawStatus.put("Không xác định", 3L);
+        mapLawStatus.put("Chưa có hiệu lực", 4L);
+    }
 
     public Law readDetail(Law law) throws Exception {
         String url = "https://vanbanphapluat.co/api/search?kwd=" + URLEncoder.encode(law.getCrawlerTypeName() + " " + law.getNumber(), "UTF-8");
@@ -66,11 +76,29 @@ public class VanBanPhapLuatCoParser {
             System.out.println(dataResult.get("TrichYeu"));
             System.out.println(dataResult.get("NgayBanHanh"));
             System.out.println(dataResult.get("NgayHieuLuc"));
+            System.out.println(dataResult.get("NgayHetHieuLuc"));
             System.out.println(dataResult.get("NguoiKy"));
             System.out.println(dataResult.get("TrinhTrangHieuLuc"));
+
+            Map<String, Object> dataStatus = (Map<String, Object>) dataResult.get("TrinhTrangHieuLuc");
+            System.out.println(dataStatus.get("Title"));
+
+            String ngayHieuLuc = (String) dataResult.get("NgayHieuLuc");
+            Date dateNgayHieuLuc = dateFormat.parse(ngayHieuLuc);
+
+            String ngayHetHieuLuc = (String)dataResult.get("NgayHetHieuLuc");
+            if (ngayHetHieuLuc != null) {
+                Date dateNgayHetHieuLuc = dateFormat.parse(ngayHetHieuLuc);
+                law.setDateExpired(dateNgayHetHieuLuc);
+            }
+
+            law.setDateEffective(dateNgayHieuLuc);
+            law.setLawStatus(mapLawStatus.get(dataStatus.get("Title")));
+
+            return law;
         }
 
-        return law;
+        return null;
     }
 
     public static void main(String[] args) throws Exception {

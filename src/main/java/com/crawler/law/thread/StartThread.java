@@ -75,6 +75,36 @@ public class StartThread {
                 timerCategory.schedule(timerTaskCategory, 0, timeCategory * 60 * 1000);
 
                 break;
+
+            case STATUS_EXPIRED:
+                TimerTask timerTaskStatus = new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (ShareQueue.shareQueueStatusItem.size() == 0) {
+                            try {
+                                int limit = limitCount;
+
+                                List<Law> contentList = lawDAO.queueListStatusExpired(limit);
+
+                                ShareQueue.shareQueueStatusItem.addAll(contentList);
+                            } catch (SQLException e) {
+                                logger.error("StartThread", e);
+                            }
+                        }
+                    }
+                };
+
+                int timeStatus = NumberUtils.toInt(ResourceUtil.getValue(" data.time.get.record"), 1); //Phut
+
+                Timer timerStatus = new Timer();
+                timerStatus.schedule(timerTaskStatus, 0, timeStatus * 60 * 1000);
+
+                for (int i = 1; i <= threadDataCount; i++) {
+                    new Thread(new ThreadLawStatusExpired(i)).start();
+                    Thread.sleep(5000);
+                }
+
+                break;
         }
 
     }

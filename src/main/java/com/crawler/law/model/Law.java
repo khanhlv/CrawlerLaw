@@ -12,6 +12,7 @@ public class Law {
     private String numberPublic;
     private Date dateIssued;
     private Date dateExpired;
+    private Date dateEffective;
     private Date datePublic;
     private String signed;
     private Date updatedDate;
@@ -210,5 +211,13 @@ public class Law {
 
     public void setGoogleDriveId(String googleDriveId) {
         this.googleDriveId = googleDriveId;
+    }
+
+    public Date getDateEffective() {
+        return dateEffective;
+    }
+
+    public void setDateEffective(Date dateEffective) {
+        this.dateEffective = dateEffective;
     }
 }
