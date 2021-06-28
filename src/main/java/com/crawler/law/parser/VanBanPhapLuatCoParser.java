@@ -32,11 +32,12 @@ public class VanBanPhapLuatCoParser {
         mapLawStatus.put("Hết hiệu lực", 2L);
         mapLawStatus.put("Không xác định", 3L);
         mapLawStatus.put("Chưa có hiệu lực", 4L);
+        mapLawStatus.put("Không còn phù hợp", 5L);
     }
 
     public Law readDetail(Law law) throws Exception {
         String url = "https://vanbanphapluat.co/api/search?kwd=" + URLEncoder.encode(law.getCrawlerTypeName() + " " + law.getNumber(), "UTF-8");
-        System.out.println(url);
+        System.out.println(url + " ["+law.getId()+"]");
         Connection connection = Jsoup.connect(url)
                 .userAgent(UserAgent.getUserAgent())
                 .timeout(Consts.TIMEOUT)
@@ -72,19 +73,22 @@ public class VanBanPhapLuatCoParser {
         }).findFirst().orElse(null);
 
         if (dataResult != null) {
-            System.out.println(dataResult.get("SoHieu"));
-            System.out.println(dataResult.get("TrichYeu"));
-            System.out.println(dataResult.get("NgayBanHanh"));
-            System.out.println(dataResult.get("NgayHieuLuc"));
-            System.out.println(dataResult.get("NgayHetHieuLuc"));
-            System.out.println(dataResult.get("NguoiKy"));
-            System.out.println(dataResult.get("TrinhTrangHieuLuc"));
+//            System.out.println("SoHieu: " + dataResult.get("SoHieu"));
+//            System.out.println("TrichYeu" + dataResult.get("TrichYeu"));
+//            System.out.println("NgayBanHanh: " + dataResult.get("NgayBanHanh"));
+//            System.out.println("NgayHieuLuc: " + dataResult.get("NgayHieuLuc"));
+//            System.out.println("NgayHetHieuLuc: " + dataResult.get("NgayHetHieuLuc"));
+//            System.out.println(dataResult.get("NguoiKy"));
+//            System.out.println(dataResult.get("TrinhTrangHieuLuc"));
 
             Map<String, Object> dataStatus = (Map<String, Object>) dataResult.get("TrinhTrangHieuLuc");
-            System.out.println(dataStatus.get("Title"));
+//            System.out.println("TrinhTrangHieuLuc: " +dataStatus.get("Title"));
 
             String ngayHieuLuc = (String) dataResult.get("NgayHieuLuc");
-            Date dateNgayHieuLuc = dateFormat.parse(ngayHieuLuc);
+            if (ngayHieuLuc != null) {
+                Date dateNgayHieuLuc = dateFormat.parse(ngayHieuLuc);
+                law.setDateEffective(dateNgayHieuLuc);
+            }
 
             String ngayHetHieuLuc = (String)dataResult.get("NgayHetHieuLuc");
             if (ngayHetHieuLuc != null) {
@@ -92,7 +96,6 @@ public class VanBanPhapLuatCoParser {
                 law.setDateExpired(dateNgayHetHieuLuc);
             }
 
-            law.setDateEffective(dateNgayHieuLuc);
             law.setLawStatus(mapLawStatus.get(dataStatus.get("Title")));
 
             return law;
@@ -103,10 +106,11 @@ public class VanBanPhapLuatCoParser {
 
     public static void main(String[] args) throws Exception {
         Law law = new Law();
-        law.setNumber("3256/BYT-DP");
-        law.setDateIssued(new SimpleDateFormat("dd/MM/yyyy").parse("23/04/2021"));
-        law.setCrawlerTypeName("Công văn");
-        law.setCrawlerAgencyName("Bộ Y tế");
+        law.setId(1L);
+        law.setNumber("403/QĐ-UBND");
+        law.setDateIssued(new SimpleDateFormat("dd/MM/yyyy").parse("26/07/2018"));
+        law.setCrawlerTypeName("Quyết định");
+        law.setCrawlerAgencyName("Tỉnh Bắc Ninh");
         new VanBanPhapLuatCoParser().readDetail(law);
     }
 

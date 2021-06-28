@@ -36,15 +36,17 @@ public class ThreadLawStatusExpired implements Runnable {
 
                         Law content = vanBanPhapLuatCoParser.readDetail(data);
 
+                        String status = "1";
                         if (content == null) {
-                            lawDAO.updateStatusExpired(data.getId(), -1);
+                            lawDAO.updateStatusExpired(data.getId(), 2);
+                            status = "2";
                         } else {
                             lawDAO.updateContentExpired(content);
                         }
 
                         long end = System.currentTimeMillis() - start;
 
-                        logger.debug(this.threadName + "## GET ID["+data.getId()+"][TIME=" + end  + "]");
+                        logger.debug(this.threadName + "## GET ID["+data.getId()+"][TIME=" + end  + "][STATUS="+status+"]");
 
                     } catch (Exception ex) {
                         logger.error(this.threadName + " ## ERROR[" + data.getId() + "]", ex);

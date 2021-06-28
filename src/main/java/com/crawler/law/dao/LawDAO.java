@@ -48,7 +48,7 @@ public class LawDAO {
     public List<Law> queueListStatusExpired(int limit) throws SQLException {
 
         List<Law> dataList = new ArrayList<>();
-        String sqlStory = "SELECT TOP "+ limit+" * FROM LAW WHERE STATUS_DATE_EXPIRED = 0 ORDER BY LAW_UPDATED_DATE DESC";
+        String sqlStory = "SELECT TOP "+ limit+" * FROM LAW WHERE STATUS = 1 AND STATUS_DATE_EXPIRED = 0";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -105,8 +105,9 @@ public class LawDAO {
 
         System.out.println("INSERT[" + law.getCrawlerSource() + "]");
 
-        String sqlStory = "INSERT INTO LAW(LAW_NAME,LAW_DATE_ISSUED,LAW_UPDATED_DATE,META_URL,META_TITLE,META_DESCRIPTION,META_KEYWORD,CRAWLER_CATEGORY,CRAWLER_SOURCE,STATUS) " +
-                "VALUES (?,?,?,?,?,?,?,?,?,?)";
+        String sqlStory = "INSERT INTO LAW(LAW_NAME,LAW_DATE_ISSUED,LAW_UPDATED_DATE,META_URL,META_TITLE,META_DESCRIPTION,META_KEYWORD,CRAWLER_CATEGORY,CRAWLER_SOURCE,STATUS," +
+                "CRAWLER_SOURCE_ID) " +
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -120,6 +121,7 @@ public class LawDAO {
             pStmt.setString(8, law.getCrawlerCategoryName());
             pStmt.setString(9, law.getCrawlerSource());
             pStmt.setInt(10, 0);
+            pStmt.setString(11, crawlerSouceId(law.getCrawlerSource()));
 
             pStmt.executeUpdate();
 
@@ -197,12 +199,12 @@ public class LawDAO {
         }
     }
 
-    public boolean checkExists(String crawlerSouce) throws SQLException {
-        String sqlStory = "SELECT * FROM LAW WHERE CRAWLER_SOURCE = ?";
+    public boolean checkExists(String crawlerSource) throws SQLException {
+        String sqlStory = "SELECT * FROM LAW WHERE CRAWLER_SOURCE_ID = ?";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
-            pStmt.setString(1, crawlerSouce);
+            pStmt.setString(1, crawlerSouceId(crawlerSource));
 
             ResultSet rs = pStmt.executeQuery();
 
@@ -287,7 +289,7 @@ public class LawDAO {
 
     public void updateContentExpired(Law content) throws SQLException {
 
-        String sqlStory = "UPDATE LAW SET LAW_DATE_EFFECTIVE = ?, LAW_DATE_EXPIRED = ?, LAW_STATUS = ? WHERE LAW_ID = ?";
+        String sqlStory = "UPDATE LAW SET LAW_DATE_EFFECTIVE = ?, LAW_DATE_EXPIRED = ?, LAW_STATUS = ?, STATUS_DATE_EXPIRED = 1  WHERE LAW_ID = ?";
         try (Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -300,5 +302,11 @@ public class LawDAO {
         } catch (Exception ex) {
             throw ex;
         }
+    }
+
+    private String crawlerSouceId(String data) {
+        String crawlerSourceId = data.substring(data.lastIndexOf("-") + 1, data.lastIndexOf("."));
+
+        return crawlerSourceId;
     }
 }
