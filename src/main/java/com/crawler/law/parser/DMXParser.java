@@ -19,7 +19,7 @@ public class DMXParser {
     private static final Logger logger = LoggerFactory.getLogger(DMXParser.class);
 
     public void readDetail() throws Exception {
-        String url = "https://www.dienmayxanh.com/vao-bep/cach-lam-thit-heo-hap-gung-thom-nong-am-nong-thom-ngon-kho-14043";
+        String url = "https://www.dienmayxanh.com/vao-bep/cach-lam-banh-pho-mai-hinh-trai-cam-cuc-ngon-cuc-hot-ma-de-14279";
         System.out.println(url);
 
         Connection connection = Jsoup.connect(url)
@@ -28,10 +28,40 @@ public class DMXParser {
                 .maxBodySize(0);
 
         Document body = connection.get();
+        Elements elements = body.select(".detail-content");
 
-        System.out.println(body.select("#tongquan").toString().replaceAll("data-src", "src"));
-        System.out.println(body.select("#chuanbi").toString().replaceAll("data-src", "src"));
-        System.out.println(body.select("#step").toString().replaceAll("data-src", "src"));
+        elements.select(".rate-view").remove();
+        elements.select(".list-recipe").remove();
+        elements.select(".infobox").remove();
+        elements.select(".tipsnote").remove();
+        elements.select("#dmxoverlay").remove();
+        elements.select(".customerSurvey").remove();
+        elements.select(".order-review").remove();
+        elements.select(".food-similar").remove();
+        elements.select("#boxRating").remove();
+        elements.select(".box-commentCook").remove();
+        elements.select(".staple small").remove();
+
+        elements.select(".tipsrecipe p").forEach(v -> {
+            if (v.text().contains("Xem chi tiết")) {
+                v.remove();
+            }
+        });
+
+        elements.select("a").forEach(v -> {
+            v.attr("href", "#");
+        });
+
+        elements.select("*").removeAttr("onclick").removeAttr("data-picid");
+
+        String data = elements.toString()
+                .replaceAll("data-src", "src")
+                .replaceAll("Điện máy XANH", "HAY ĂN")
+                .replaceAll("bachhoaxanh.com", "hayan.vn");
+
+        System.out.println(body.select("meta[name=keywords]").attr("content"));
+        System.out.println(body.select("meta[name=description]").attr("content"));
+        System.out.println(data);
     }
 
     public void readPage() throws Exception {
