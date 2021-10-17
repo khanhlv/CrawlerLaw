@@ -4,6 +4,7 @@ import com.crawler.law.core.ConnectionPool;
 import com.crawler.law.core.Consts;
 import com.crawler.law.core.UserAgent;
 import com.crawler.law.model.Law;
+import com.crawler.law.thread.ThreadLawStatusExpired;
 import com.crawler.law.util.GZipUtil;
 import com.crawler.law.util.StringUtil;
 
@@ -18,9 +19,8 @@ import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class DMXParser {
     private static final Logger logger = LoggerFactory.getLogger(DMXParser.class);
@@ -70,7 +70,7 @@ public class DMXParser {
         String metaDescritpion = body.select("meta[name=description]").attr("content");
         String category = body.select(".detail-danhmuc ul li.active").text().trim();
 
-        GZipUtil.compressGZIP(data, new File("D:\\hayan.vn\\" + id.concat(".html.gz")));
+        GZipUtil.compressGZIP(data, new File("D:\\hayan\\data\\" + id.concat(".html.gz")));
 
         updatePostContent(id, id.concat(".html.gz"), category, metaDescritpion, metaKeywork);
 
@@ -80,7 +80,6 @@ public class DMXParser {
         System.out.println("Keywork: " + metaKeywork);
         System.out.println("Data: " + data.length());
     }
-    public static List<String> listId = new ArrayList<>();
 
     public void readPage(int page) throws Exception {
         String url = "https://www.dienmayxanh.com/vao-bep/aj/Home/ViewMoreLastestBox";
@@ -95,7 +94,6 @@ public class DMXParser {
         dataMap.put("pageIndex", String.valueOf(page));
         connection.data(dataMap);
 
-
         Document body = connection.post();
 
         Elements elements = body.select("li a[href]");
@@ -105,33 +103,27 @@ public class DMXParser {
             String nameFood = v.select("img").attr("alt");
             String image = v.select("img").attr("data-src");
             String link = "https://www.dienmayxanh.com" + v.attr("href");
-
-            System.out.println("-----------------");
             String id = link.substring(link.lastIndexOf("-") + 1);
-            System.out.println("Title: " + title);
-            System.out.println("Name: " + nameFood);
-            System.out.println("Image: " + image);
-            System.out.println("Link: " + link);
-            System.out.println("Id: " + id);
 
-            if (!listId.contains(id)) {
-                try {
-                    insertPostPage(title, nameFood, image, link, id);
-                } catch (SQLException e) {
-                    logger.error("SQLException + " + page, e);
+            try {
+                if (!checkExists(id)) {
+                    System.out.println("-----------------");
+                    System.out.println("Title: " + title);
+                    System.out.println("Name: " + nameFood);
+                    System.out.println("Image: " + image);
+                    System.out.println("Link: " + link);
+                    System.out.println("Id: " + id);
+                   insertPostPage(title, nameFood, image, link, id);
                 }
-
-                listId.add(id);
+            } catch (SQLException e) {
+                logger.error("SQLException + " + page, e);
             }
-
         });
-
-        System.out.println(elements.size() + "-" + listId.size());
     }
 
-    public List<String> queueList() throws SQLException {
-        List<String> dataList = new ArrayList<>();
-        String sqlStory = "SELECT TOP 1 * FROM POST WHERE STATUS = 0";
+    public ConcurrentLinkedDeque<String> queueList() throws SQLException {
+        ConcurrentLinkedDeque<String> dataList = new ConcurrentLinkedDeque<>();
+        String sqlStory = "SELECT * FROM POST WHERE STATUS = 0";
         try (java.sql.Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -145,6 +137,25 @@ public class DMXParser {
         }
 
         return dataList;
+    }
+
+    public boolean checkExists(String id) throws SQLException {
+        String sqlStory = "SELECT * FROM POST WHERE SOURCE_ID = ?";
+        try (java.sql.Connection con = ConnectionPool.getTransactional();
+             PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
+
+            pStmt.setString(1, id);
+
+            ResultSet rs = pStmt.executeQuery();
+
+            if (rs.next()) {
+                return true;
+            }
+        } catch (Exception ex) {
+            throw ex;
+        }
+
+        return false;
     }
 
     public void insertPostPage(String title, String name, String image, String link, String id) throws SQLException {
@@ -190,7 +201,7 @@ public class DMXParser {
 
             pStmt.setString(1, content);
             pStmt.setString(2, category);
-            pStmt.setString(3, StringUtil.stripAccents(category));
+            pStmt.setString(3, StringUtil.stripAccents(category, "-"));
             pStmt.setString(4, description);
             pStmt.setString(5, "," + keyword);
             pStmt.setString(6, id);
@@ -201,33 +212,58 @@ public class DMXParser {
         }
     }
 
+    public void startDetail() throws Exception  {
+        DMXParser dmxParser = new DMXParser();
+
+        ConcurrentLinkedDeque<String> concurrentLinkedDeque = dmxParser.queueList();
+
+        while (concurrentLinkedDeque.size() > 0) {
+            for (int i = 1; i <= 4; i++) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (concurrentLinkedDeque.size() > 0) {
+                            String data = concurrentLinkedDeque.poll();
+
+                            String id = data.split("\\|")[0];
+                            String url = data.split("\\|")[1];
+
+                            System.out.println(id + "-" + url);
+
+                            try {
+                                dmxParser.readDetail(url, id);
+                            } catch (Exception ex) {
+                                logger.error("readDetail" + ex);
+                                try {
+                                    dmxParser.updatePostStatus(id, -1);
+                                } catch (Exception ex1) {
+                                    logger.error("updatePostStatus" + ex);
+                                }
+                            }
+                        }
+                    }
+                }).start();
+                Thread.sleep(1000);
+            }
+
+            System.out.println("SIZE " + concurrentLinkedDeque.size());
+        }
+    }
+
+    public void startCategory() throws Exception  {
+        DMXParser dmxParser = new DMXParser();
+        int page = 50;
+        while (page > 0) {
+            dmxParser.readPage(page);
+            page--;
+            Thread.sleep(500);
+        }
+    }
     public static void main(String[] args) throws Exception {
 
         DMXParser dmxParser = new DMXParser();
-//        int page = 875;
-//        while (page > 0) {
-//            dmxParser.readPage(page);
-//            page--;
-//            Thread.sleep(500);
-//        }
-
-        dmxParser.queueList().forEach(v -> {
-            String id = v.split("\\|")[0];
-            String url = v.split("\\|")[1];
-
-            System.out.println(id + "-" + url);
-
-            try {
-                dmxParser.readDetail(url, id);
-            } catch (Exception ex) {
-                logger.error("readDetail" + ex);
-                try {
-                    dmxParser.updatePostStatus(id, -1);
-                } catch (Exception ex1) {
-                    logger.error("updatePostStatus" + ex);
-                }
-            }
-        });
+        dmxParser.startCategory();
+        //dmxParser.startDetail();
 
     }
 
