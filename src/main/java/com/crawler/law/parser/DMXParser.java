@@ -3,8 +3,6 @@ package com.crawler.law.parser;
 import com.crawler.law.core.ConnectionPool;
 import com.crawler.law.core.Consts;
 import com.crawler.law.core.UserAgent;
-import com.crawler.law.model.Law;
-import com.crawler.law.thread.ThreadLawStatusExpired;
 import com.crawler.law.util.GZipUtil;
 import com.crawler.law.util.StringUtil;
 
@@ -40,7 +38,11 @@ public class DMXParser {
         elements.select(".rate-view").remove();
         elements.select(".list-recipe").remove();
         elements.select(".infobox").remove();
-        elements.select(".tipsnote").remove();
+        //elements.select(".tipsnote").remove();
+        elements.select(".generate-promotion-products").remove();
+        elements.select(".txtAuthor").remove();
+        elements.select(".sourceNoneClick").remove();
+
         elements.select("#dmxoverlay").remove();
         elements.select(".customerSurvey").remove();
         elements.select(".order-review").remove();
@@ -64,13 +66,17 @@ public class DMXParser {
         String data = elements.toString()
                 .replaceAll("data-src", "src")
                 .replaceAll("Điện máy XANH", "HAY ĂN")
+                .replaceAll("điện máy XANH", "HAY ĂN")
                 .replaceAll("bachhoaxanh.com", "hayan.vn");
 
         String metaKeywork = body.select("meta[name=keywords]").attr("content");
         String metaDescritpion = body.select("meta[name=description]").attr("content");
+        metaDescritpion = metaDescritpion.replaceAll("Điện máy XANH", "HAY ĂN")
+                .replaceAll("điện máy XANH", "HAY ĂN")
+                .replaceAll("bachhoaxanh.com", "hayan.vn");
         String category = body.select(".detail-danhmuc ul li.active").text().trim();
 
-        GZipUtil.compressGZIP(data, new File("D:\\hayan\\data\\" + id.concat(".html.gz")));
+        GZipUtil.compressGZIP(data, new File("D:\\vhost\\hayan.vn\\data\\" + id.concat(".html.gz")));
 
         updatePostContent(id, id.concat(".html.gz"), category, metaDescritpion, metaKeywork);
 
@@ -160,9 +166,9 @@ public class DMXParser {
 
     public void insertPostPage(String title, String name, String image, String link, String id) throws SQLException {
         String sqlStory = "INSERT INTO POST (POST_TITLE, POST_IMAGE, POST_DATE, " +
-                "META_URL, META_TITLE, META_KEYWORDS, " +
+                "META_URL, META_TITLE, META_KEYWORDS, META_IMAGE, " +
                 "SOURCE_URL, SOURCE_ID, STATUS) " +
-                " VALUES (?,?,getdate(),?,?,?,?,?,0)";
+                " VALUES (?,?,getdate(),?,?,?,?,?,?,0)";
         try (java.sql.Connection con = ConnectionPool.getTransactional();
              PreparedStatement pStmt = con.prepareStatement(sqlStory)) {
 
@@ -171,8 +177,9 @@ public class DMXParser {
             pStmt.setString(3, StringUtil.stripAccents(title, "-"));
             pStmt.setString(4, title);
             pStmt.setString(5, name);
-            pStmt.setString(6, link);
-            pStmt.setString(7, id);
+            pStmt.setString(6, image);
+            pStmt.setString(7, link);
+            pStmt.setString(8, id);
 
             pStmt.executeUpdate();
         } catch (Exception ex) {
@@ -218,7 +225,7 @@ public class DMXParser {
         ConcurrentLinkedDeque<String> concurrentLinkedDeque = dmxParser.queueList();
 
         while (concurrentLinkedDeque.size() > 0) {
-            for (int i = 1; i <= 4; i++) {
+            for (int i = 1; i <= 5; i++) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
@@ -252,7 +259,7 @@ public class DMXParser {
 
     public void startCategory() throws Exception  {
         DMXParser dmxParser = new DMXParser();
-        int page = 50;
+        int page = 30;
         while (page > 0) {
             dmxParser.readPage(page);
             page--;
@@ -263,7 +270,9 @@ public class DMXParser {
 
         DMXParser dmxParser = new DMXParser();
         dmxParser.startCategory();
-        //dmxParser.startDetail();
+        dmxParser.startDetail();
+
+        //dmxParser.readDetail("https://www.dienmayxanh.com/vao-bep/cach-lam-thit-heo-khia-nuoc-dua-dam-da-dua-com-tai-nha-07735", "");
 
     }
 
