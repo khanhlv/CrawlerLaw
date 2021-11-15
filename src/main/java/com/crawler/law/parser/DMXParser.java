@@ -5,7 +5,6 @@ import com.crawler.law.core.Consts;
 import com.crawler.law.core.UserAgent;
 import com.crawler.law.util.GZipUtil;
 import com.crawler.law.util.StringUtil;
-
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -17,7 +16,10 @@ import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class DMXParser {
@@ -266,13 +268,28 @@ public class DMXParser {
             Thread.sleep(500);
         }
     }
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
 
         DMXParser dmxParser = new DMXParser();
-        dmxParser.startCategory();
-        dmxParser.startDetail();
 
-        //dmxParser.readDetail("https://www.dienmayxanh.com/vao-bep/cach-lam-thit-heo-khia-nuoc-dua-dam-da-dua-com-tai-nha-07735", "");
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    dmxParser.startCategory();
+                    dmxParser.startDetail();
+                } catch (Exception e) {
+                    logger.error("TimerTask", e);
+                }
+            }
+        };
+
+        int time = 240; //Phut
+
+        Timer timer = new Timer();
+        timer.schedule(timerTask, 0, time * 60 * 1000);
+
+        //dmxParser.readDetail("https://www.dienmayxanh.com/vao-bep/cach-lam-banh-mi-thanh-long-sau-rieng-khong-can-lo-nuong-01822", "");
 
     }
 
