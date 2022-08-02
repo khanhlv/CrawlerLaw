@@ -78,7 +78,7 @@ public class DMXParser {
                 .replaceAll("bachhoaxanh.com", "hayan.vn");
         String category = body.select(".detail-danhmuc ul li.active").text().trim();
 
-        GZipUtil.compressGZIP(data, new File("D:\\vhost\\hayan.vn\\data\\" + id.concat(".html.gz")));
+        GZipUtil.compressGZIP(data, new File("C:\\vhots\\hayan.vn\\data\\" + id.concat(".html.gz")));
 
         updatePostContent(id, id.concat(".html.gz"), category, metaDescritpion, metaKeywork);
 
@@ -121,7 +121,7 @@ public class DMXParser {
                     System.out.println("Image: " + image);
                     System.out.println("Link: " + link);
                     System.out.println("Id: " + id);
-                   insertPostPage(title, nameFood, image, link, id);
+                    insertPostPage(title, nameFood, image, link, id);
                 }
             } catch (SQLException e) {
                 logger.error("SQLException + " + page, e);
@@ -221,53 +221,63 @@ public class DMXParser {
         }
     }
 
-    public void startDetail() throws Exception  {
+    public void startDetail() {
         DMXParser dmxParser = new DMXParser();
 
-        ConcurrentLinkedDeque<String> concurrentLinkedDeque = dmxParser.queueList();
+        try {
+            ConcurrentLinkedDeque<String> concurrentLinkedDeque = dmxParser.queueList();
 
-        while (concurrentLinkedDeque.size() > 0) {
-            for (int i = 1; i <= 5; i++) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (concurrentLinkedDeque.size() > 0) {
-                            String data = concurrentLinkedDeque.poll();
+            while (concurrentLinkedDeque.size() > 0) {
+                for (int i = 1; i <= 5; i++) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (concurrentLinkedDeque.size() > 0) {
+                                String data = concurrentLinkedDeque.poll();
 
-                            String id = data.split("\\|")[0];
-                            String url = data.split("\\|")[1];
+                                String id = data.split("\\|")[0];
+                                String url = data.split("\\|")[1];
 
-                            System.out.println(id + "-" + url);
+                                System.out.println(id + "-" + url);
 
-                            try {
-                                dmxParser.readDetail(url, id);
-                            } catch (Exception ex) {
-                                logger.error("readDetail" + ex);
                                 try {
-                                    dmxParser.updatePostStatus(id, -1);
-                                } catch (Exception ex1) {
-                                    logger.error("updatePostStatus" + ex);
+                                    dmxParser.readDetail(url, id);
+                                } catch (Exception ex) {
+                                    logger.error("readDetail" + ex);
+                                    try {
+                                        dmxParser.updatePostStatus(id, -1);
+                                    } catch (Exception ex1) {
+                                        logger.error("updatePostStatus" + ex);
+                                    }
                                 }
                             }
                         }
-                    }
-                }).start();
-                Thread.sleep(1000);
+                    }).start();
+                    Thread.sleep(1000);
+                }
+            }
+            System.out.println("SIZE " + concurrentLinkedDeque.size());
+        } catch (Exception ex) {
+            logger.error("startDetail" + ex);
+        }
+    }
+
+    public void startCategory()  {
+        DMXParser dmxParser = new DMXParser();
+        int page = 100;
+        while (page > 0) {
+            try {
+                dmxParser.readPage(page);
+
+                Thread.sleep(500);
+            } catch (Exception ex) {
+                logger.error("startCategory", ex);
             }
 
-            System.out.println("SIZE " + concurrentLinkedDeque.size());
+            page--;
         }
     }
 
-    public void startCategory() throws Exception  {
-        DMXParser dmxParser = new DMXParser();
-        int page = 30;
-        while (page > 0) {
-            dmxParser.readPage(page);
-            page--;
-            Thread.sleep(500);
-        }
-    }
     public static void main(String[] args) {
 
         DMXParser dmxParser = new DMXParser();
@@ -288,9 +298,5 @@ public class DMXParser {
 
         Timer timer = new Timer();
         timer.schedule(timerTask, 0, time * 60 * 1000);
-
-        //dmxParser.readDetail("https://www.dienmayxanh.com/vao-bep/cach-lam-banh-mi-thanh-long-sau-rieng-khong-can-lo-nuong-01822", "");
-
     }
-
 }
